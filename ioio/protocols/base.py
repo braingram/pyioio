@@ -19,6 +19,6 @@ class Protocol(object):
         """
         return utils.read_response(interface, self._response_chars)
 
-    def write_command(self, interface, name, **kargs):
+    def write_command(self, interface, name, **kwargs):
         return utils.write_command(interface, self.commands,
             name, **kwargs)

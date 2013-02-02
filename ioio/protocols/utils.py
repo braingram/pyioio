@@ -111,5 +111,56 @@ def read_response(interface, response_chars):
     return result
 
 
+def package(spec, data, result='', biti=0):
+    if len(spec) == 0:
+        return ''
+    if len(spec) > 1:
+        r = ''
+        for item in spec:
+            r = package((item, ), data, r, biti)
+            nb = item[1]
+            if isinstance(nb, str):
+                nb = data[item[0]]
+            biti += nb
+        return r
+    item = spec[0]
+    name = item[0]
+    nb = item[1]
+    if isinstance(nb, str):
+        nb = data[name]
+    if name == '':
+        # add a bunch of 0s
+        return r
+    datum = data[name]
+    B, b = divmod(biti, 8)
+    if isinstance(datum, str):
+        if b != 0:
+            raise NotImplementedError('Can only add full chars')
+        if len(datum) != int(nb // 8):
+            raise ValueError('Invalid datum length %s expected %s' % \
+                (len(datum), int(nb // 8))
+        # add characters
+        return r + datum
+    # test if a new byte is needed
+    nB = math.ceil((biti + nb) / 8.)
+    while nB > len(r):
+        r += '\x00'
+    if isinstance(datum, int):
+        # flip many bits
+        raise NotImplementedError('TODO')
+        return r
+    if isinstance(datum, bool):
+        # flip 1 bit
+        if datum:
+            r[B] |= chr(0x80 >> b)
+        return r
+    raise ValueError('Invalid datum type: %s' % datum)
+
+
 def write_command(interface, commands, name, **kwargs):
+    if name not in commands:
+        raise ValueError('Unknown command: %s' % name)
+    cmd = commands[name]
+    payload = [cmd['char'],]
+    payload = package(cmd['args'], kwargs)
     raise NotImplementedError
