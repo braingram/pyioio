@@ -1,0 +1,29 @@
+An IOIO python module
+
+This is very very alpha.
+
+Basic Usage
+------
+
+import ioio
+i = ioio.IOIO('/dev/ttyACM0')
+
+
+Module layout:
+------
+
+    ioio.IOIO : main class
+        Contains a board, interface, and protocol (see below)
+
+    ioio.boards : IOIO boards
+        Contains information about what a given board supports
+        Stores information about board state
+
+    ioio.interfaces : IOIO communication interfaces
+        Different ways to communicate with an IOIO board
+        Each must support:
+            connect/disconnect
+            read/write
+
+    ioio.protocols : IOIO protocols
+        Abstraction to (hopefully) support multiple IOIO protcol versions
