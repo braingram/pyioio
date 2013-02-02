@@ -5,11 +5,12 @@ import serial
 from .base import Interface
 
 
-class RS232Interface(Interface, serial.Serial):
+# serial.Serial is first so read/write is overridden
+class RS232Interface(serial.Serial, Interface):
     def __init__(self, port, **kwargs):
         if ('baudrate' not in kwargs):
             kwargs['baudrate'] = 115200
-        Serial.__init__(self, port, **kwargs)
+        serial.Serial.__init__(self, port, **kwargs)
         Interface.__init__(self)
 
     def connect(self):

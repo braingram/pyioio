@@ -6,12 +6,17 @@ Each IOIO contains:
     - interface : communication interface
 """
 
-from . import board, interface, protocol
+from . import boards
+from . import interfaces
+from . import protocols
 
 
 class IOIO(object):
      def __init__(self, port, **kwargs):
         self.port = port
-        self.interface = interface.find(port, **kwargs)
-        self.protocol = protocol.find(interface)
-        self.board = board.find(protocol)
+        self.interface = interfaces.find(port, **kwargs)
+        self.protocol = protocols.find(self.interface)
+        self.board = boards.find(self.protocol)
+
+
+__all__ = ['IOIO']

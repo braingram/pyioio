@@ -101,7 +101,7 @@ def read_response(interface, response_chars):
             else:
                 nb = arg[1]
             if arg[0] != '':
-                result[arg[0]] = utils.extract(arg[2], nb,
+                result[arg[0]] = extract(arg[2], nb,
                         data, bytei, biti)
             biti += nb
             if biti > 7:

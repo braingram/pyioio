@@ -13,12 +13,12 @@ class Protocol(object):
         self.respones = responses
         self._response_chars = utils.to_char_lookup(responses)
 
-    def read_packet(self, interface):
+    def read_response(self, interface):
         """
         Read a response
         """
-        return utils.read_packet(interface, self._response_chars)
+        return utils.read_response(interface, self._response_chars)
 
-    def write_packet(self, interface, name, **kargs):
-        return utils.write_packet(interface, self.commands,
+    def write_command(self, interface, name, **kargs):
+        return utils.write_command(interface, self.commands,
             name, **kwargs)
