@@ -24,8 +24,11 @@ print("Firmware: '%s'" % fwv)
 
 # sets digital pin 0 to output
 s.write('\x03')  # set digital pin
-s.write('\x01')  # open drain
-s.write('\x00')  # pin
+i = raw_input('wrote header')
+s.write(chr(0b00000000))  # open_drain 0, value 0, pin 0
+#i = raw_input('wrote drain')
+#s.write('\x00')  # pin
+#i = raw_input('wrote pin')
 
 i = raw_input('Press enter to close...')
 

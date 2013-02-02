@@ -186,4 +186,5 @@ def write_command(interface, commands, name, **kwargs):
     cmd = commands[name]
     payload = [cmd['char'],]
     payload += package(cmd['args'], kwargs)
+    print repr(''.join(payload))
     interface.write(''.join(payload))
