@@ -18,6 +18,10 @@ class Protocol(object):
     def disconnect(self):
         raise NotImplementedError("Overload Protocol.disconnect")
 
+    def init(self):
+        p = self.read_packet()
+        assert p['name'] == 'establish_connection'
+
     def read(self, nbytes):
         raise NotImplementedError("Overload Protocol.read")
 
