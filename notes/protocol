@@ -1,0 +1,20 @@
+Protocol
+------
+
+1) on connection, receive
+    a) type byte \x00
+    b) magic (4) = 'IOIO'
+    b) hardware version (8)
+    c) board version (8)
+    d) firmware version (8)
+
+to board packages I think go:
+type -> args -> var_args
+
+Tests
+------
+
+<attempt> = <sent> [<received>]
+soft reset = \x01 []
+check interface = \x02 00000000 [\x02 \x00]
+set digital pin = \x03 \x01 \x00 []
