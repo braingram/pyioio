@@ -3,39 +3,7 @@
 see: firmware/app_layer_v1/protocol_defs.h
 """
 
-
-def packet(char, *args):
-    """
-    args are bit ordered right to left so
-        ('a', 1), ('b', 3) = bbba
-    set arg[1] = 0 for variable length arguments
-    """
-    bitcount = 0
-    for arg in args:
-        if len(arg) == 2:
-            k, n = arg
-            t = None
-        elif len(arg) == 3:
-            k, n, t = arg
-        else:
-            raise ValueError('Invalid packet arg: %r, %s, ' \
-                'must be len == 2 or 3' % (char, arg)
-	if not isinstance(k, str):
-            raise ValueError('arg[0] must be a string: %r, %s' \
-                % (char, arg))
-        if (k != '') and (not :
-            if 
-        if not(len(arg) > 1 and isinstance(arg[0], str) and
-                isinstance(arg[1], int, str)) and arg[1] >= 0):
-            raise ValueError('Invalid packet args: %r, %s' % (char, args))
-        if len(arg) == 2 and (not arg[0] == ''):
-            raise ValueError('Packet arg missing type: %r, %s' % (char, arg))
-        bitcount += arg[1]
-    if not ((bitcount == 0) or (bitcount % 8 == 0)):
-        raise ValueError('Invalid bitcount[%s] for packet: %r, %s' %
-                (bitcount, char, args))
-    nbytes = int(bitcount / 8)
-    return dict(char=char, args=args, nbytes=nbytes)
+from .utils import packet
 
 
 commands = {
@@ -250,7 +218,3 @@ responses = {
         ('size', 2, 'i')),
     'soft_close': packet('\x1D'),
 }
-
-
-class Version1Parser(object):
-    pass
