@@ -3,6 +3,8 @@
 see: firmware/app_layer_v1/protocol_defs.h
 """
 
+import math
+
 
 def packet(char, *args):
     """
@@ -111,11 +113,14 @@ def read_response(interface, response_chars):
     return result
 
 
-def package(spec, data, result='', biti=0):
+def package(spec, data, result=None, biti=0):
     if len(spec) == 0:
-        return ''
+        return []
     if len(spec) > 1:
-        r = ''
+        if result is None:
+            r = []
+        else:
+            r = result
         for item in spec:
             r = package((item, ), data, r, biti)
             nb = item[1]
@@ -123,6 +128,8 @@ def package(spec, data, result='', biti=0):
                 nb = data[item[0]]
             biti += nb
         return r
+    if result is None:
+        result = []
     item = spec[0]
     name = item[0]
     nb = item[1]
@@ -130,30 +137,46 @@ def package(spec, data, result='', biti=0):
         nb = data[name]
     if name == '':
         # add a bunch of 0s
-        return r
+        # test if a new byte is needed
+        nB = math.ceil((biti + nb) / 8.)
+        while nB > len(result):
+            result += ['\x00',]
+        return result
     datum = data[name]
+    dtype = item[2]
+    print datum, type(datum)
     B, b = divmod(biti, 8)
-    if isinstance(datum, str):
+    #if isinstance(datum, str):
+    if dtype == 'c':
+        data = str(datum)
         if b != 0:
             raise NotImplementedError('Can only add full chars')
         if len(datum) != int(nb // 8):
             raise ValueError('Invalid datum length %s expected %s' % \
-                (len(datum), int(nb // 8))
+                (len(datum), int(nb // 8)))
         # add characters
-        return r + datum
+        return result + list(datum)
     # test if a new byte is needed
     nB = math.ceil((biti + nb) / 8.)
-    while nB > len(r):
-        r += '\x00'
-    if isinstance(datum, int):
-        # flip many bits
-        raise NotImplementedError('TODO')
-        return r
-    if isinstance(datum, bool):
+    while nB > len(result):
+        result += ['\x00', ]
+    #if isinstance(datum, bool):
+    if dtype == 'b':
+        datum = bool(datum)
         # flip 1 bit
         if datum:
-            r[B] |= chr(0x80 >> b)
-        return r
+            result[B] = chr(ord(result[B]) | (0x80 >> b))
+        return result
+    # test bool first as True isinstance of int
+    #if isinstance(datum, int):
+    if dtype == 'i':
+        datum = int(datum)
+        # flip many bits
+        if (nb > 8):
+            raise NotImplementedError('TODO')
+        if datum:
+            result[B] = chr(ord(result[B]) | (datum << (8 - b - nb)))
+        return result
     raise ValueError('Invalid datum type: %s' % datum)
 
 
@@ -162,5 +185,5 @@ def write_command(interface, commands, name, **kwargs):
         raise ValueError('Unknown command: %s' % name)
     cmd = commands[name]
     payload = [cmd['char'],]
-    payload = package(cmd['args'], kwargs)
-    raise NotImplementedError
+    payload += package(cmd['args'], kwargs)
+    interface.write(''.join(payload))
