@@ -11,12 +11,31 @@ def packet(char, *args):
     set arg[1] = 0 for variable length arguments
     """
     bitcount = 0
+    keys = []
     for arg in args:
-        if not(len(arg) > 1 and isinstance(arg[0], str) and
-                isinstance(arg[1], int) and arg[1] >= 0):
-            raise ValueError('Invalid packet args: %r, %s' % (char, args))
-        if len(args) == 2 and (not args[0] == ''):
-            raise ValueError('Packet arg missing type: %r, %s' % (char, arg))
+        if len(arg) == 2:
+            k, n = arg
+            t = None
+        elif len(arg) == 3:
+            k, n, t = arg
+        else:
+            raise ValueError('Invalid packet arg: %r, %s, ' \
+                'must be len == 2 or 3' % (char, arg))
+	if not isinstance(k, str):
+            raise ValueError('arg[0] must be a string: %r, %s' \
+                % (char, arg))
+        if isinstance(n, int):
+            if n <= 0:
+                raise ValueError('Invalid number of bits: %r, %s' \
+                    % (char, arg))
+        if isinstance(n, str):
+            if n not in keys:
+                raise ValueError('Invalid inter-packet reference: %r, %s' \
+                    % (char, arg))
+        keys.append(k)
+        if (k != '') and (isinstance(t, str) and (t in 'bic')):
+            raise ValueError('arg[2] must be a valid type [b/i/c]: %r, %s' \
+                % (char, arg))
         bitcount += arg[1]
     if not ((bitcount == 0) or (bitcount % 8 == 0)):
         raise ValueError('Invalid bitcount[%s] for packet: %r, %s' %
@@ -26,9 +45,8 @@ def packet(char, *args):
 
 
 def extract(dtype, nbits, data, bytei, biti):
-    #TODO TEST
     if dtype == 'b':  # extract boolean
-        return bool(data[bytei] & (0x80 >> biti))
+        return bool(ord(data[bytei]) & (0x80 >> biti))
     elif dtype == 'i':  # extract integer
         if nbits == 1:
             return int(extract('b', nbits, data, bytei, biti))
@@ -36,9 +54,9 @@ def extract(dtype, nbits, data, bytei, biti):
         for i in xrange(nbits):
             B = bytei + int((i + biti) // 8)
             b = (i + biti) % 8
-            c = data[B]
-            m = (0x80 >> (b - 1))
-            r = (r & (c & m))
+            r = (r << 1)
+            if extract('b', 1, data, B, b):
+                r |= 0x01
         return r
     elif dtype == 'c':  # extract character array/string
         if biti == 0:  # on a byte boundry

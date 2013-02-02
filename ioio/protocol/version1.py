@@ -12,8 +12,21 @@ def packet(char, *args):
     """
     bitcount = 0
     for arg in args:
+        if len(arg) == 2:
+            k, n = arg
+            t = None
+        elif len(arg) == 3:
+            k, n, t = arg
+        else:
+            raise ValueError('Invalid packet arg: %r, %s, ' \
+                'must be len == 2 or 3' % (char, arg)
+	if not isinstance(k, str):
+            raise ValueError('arg[0] must be a string: %r, %s' \
+                % (char, arg))
+        if (k != '') and (not :
+            if 
         if not(len(arg) > 1 and isinstance(arg[0], str) and
-                isinstance(arg[1], int) and arg[1] >= 0):
+                isinstance(arg[1], int, str)) and arg[1] >= 0):
             raise ValueError('Invalid packet args: %r, %s' % (char, args))
         if len(arg) == 2 and (not arg[0] == ''):
             raise ValueError('Packet arg missing type: %r, %s' % (char, arg))
@@ -83,7 +96,7 @@ commands = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 0, 'c')),
+        ('data', 'size', 'c')),
     'set_pin_uart': packet('\x0F',
         ('pin', 6, 'i'),
         ('', 2),
@@ -107,7 +120,7 @@ commands = {
         ('res_size_neq_total', 1, 'b'),
         ('data_size_neq_total', 1, 'b'),
         ('data_size', 8, 'i'),
-        ('data', 0, 'c')),
+        ('data', 'data_size', 'c')),
     'set_pin_spi': packet('\x12',
         ('pin', 6, 'i'),
         ('', 2),
@@ -128,7 +141,7 @@ commands = {
         ('addr_lsb', 8, 'i'),
         ('write_size', 8, 'i'),
         ('read_size', 8, 'i'),
-        ('data', 0, 'c')),
+        ('data', 'write_size', 'c')),
     #'\x15': ''
     'icsp_six': packet('\x16',
         ('inst', 24, 'c')),
@@ -188,7 +201,7 @@ responses = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 0, 'c')),
+        ('data', 'size', 'c')),
     # NOTE bytes_to_add = N of additional bytes to read
     'uart_report_tx_status': packet('\x0F',
         ('uart_num', 2, 'i'),
@@ -202,7 +215,7 @@ responses = {
         ('spi_num', 2, 'i'),
         ('ss_pin', 6, 'i'),
         ('', 2),
-        ('data', 0, 'c')),
+        ('data', 'size', 'c')),
     # NOTE bytes_to_add = N of additional bytes to read
     'spi_report_tx_status': packet('\x12',
         ('spi_num', 2, 'i'),
