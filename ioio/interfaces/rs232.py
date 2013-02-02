@@ -9,7 +9,7 @@ class RS232Interface(Interface, serial.Serial):
     def __init__(self, port, **kwargs):
         if ('baudrate' not in kwargs):
             kwargs['baudrate'] = 115200
-        Serial.__init__(self, **kwargs)
+        Serial.__init__(self, port, **kwargs)
         Interface.__init__(self)
 
     def connect(self):

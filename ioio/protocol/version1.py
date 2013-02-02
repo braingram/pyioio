@@ -3,7 +3,8 @@
 see: firmware/app_layer_v1/protocol_defs.h
 """
 
-from .utils import packet
+from .utils import packet, to_char_lookup
+from .base import Protocol
 
 
 commands = {
@@ -137,6 +138,8 @@ commands = {
     'soft_close': packet('\x1D'),
 }
 
+command_chars = to_char_lookup(commands)
+
 responses = {
     'establish_connection': packet('\x00',
         ('magic', 32, 'c'),
@@ -218,3 +221,11 @@ responses = {
         ('size', 2, 'i')),
     'soft_close': packet('\x1D'),
 }
+
+response_chars = to_char_lookup(responses)
+
+
+class Version1Protocol(Protocol):
+    def __init__(self, connection_packet):
+        Protocol.__init__(self, commands, responses)
+        self.connection_packet = connection_packet

@@ -2,7 +2,9 @@
 
 from . import rs232
 
-from .utils import find
 
+def find(port, **kwargs):
+    # only rs232 for now
+    return rs232.RS232Interface(port, **kwargs)
 
-__all__ = ['rs232', 'find']
+__all__ = ['find']

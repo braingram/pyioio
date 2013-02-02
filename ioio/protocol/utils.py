@@ -80,3 +80,36 @@ def to_char_lookup(packets):
     if len(l) != len(packets):
         raise ValueError("Failed to create character lookup for packets")
     return l
+
+
+def read_response(interface, response_chars):
+    """
+    Read a response
+    """
+    rtype = interface.read(1)
+    if (rtype not in response_chars):
+        raise ValueError("Unknown response type: %r" % rtype)
+    resp = response_chars[rtype]
+    result = {'name': resp['name']}
+    if len(resp['args']):
+        data = interface.read(resp['nbytes'])
+        bytei = 0
+        biti = 0
+        for arg in resp['args']:
+            if isinstance(arg[1], str):
+                nb = result[arg[1]]
+            else:
+                nb = arg[1]
+            if arg[0] != '':
+                result[arg[0]] = utils.extract(arg[2], nb,
+                        data, bytei, biti)
+            biti += nb
+            if biti > 7:
+                bytei += int(biti // 8)
+                biti = biti % 8
+    # TODO packets with extra data
+    return result
+
+
+def write_command(interface, commands, name, **kwargs):
+    raise NotImplementedError
