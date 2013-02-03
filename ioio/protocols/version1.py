@@ -146,7 +146,7 @@ responses = {
         ('hardware_version', 64, 'c'),
         ('board_version', 64, 'c'),
         ('firmware_version', 64, 'c')),
-    #'\x01': ''
+    'soft_reset': packet('\x01'),
     'check_interface_response': packet('\x02',
         ('supported', 1, 'b'),
         ('', 7)),
@@ -161,13 +161,17 @@ responses = {
         ('cn', 1, 'b'),
         ('', 1),
         ('pin', 6, 'i')),
-    #'\x07': ''
+    'register_periodic_digital_sampling': packet('\x07',
+        ('pin', 6, 'i'),
+        ('', 2),
+        ('freq_scale', 8, 'i')),
     #'\x08': ''
     #'\x09': ''
     #'\x0A': ''
     'report_analog_in_status': packet('\x0B'),
     'report_analog_in_format': packet('\x0C',
-        ('num_pins', 8, 'i')),
+        ('num_pins', 8, 'i'),
+        ('pins', 'num_pins', 'i')),
     'uart_status': packet('\x0D',
         ('uart_num', 2, 'i'),
         ('', 5),
@@ -213,7 +217,9 @@ responses = {
         ('reg', 16, 'c')),
     #'\x18': ''
     #'\x19': ''
-    #'\x1A': ''
+    'icsp_config': packet('\x1A',
+        ('enable', 1, 'b'),
+        ('', 7)),
     'incap_status': packet('\x1B',
         ('incap_num', 4, 'i'),
         ('', 3),

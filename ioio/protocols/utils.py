@@ -101,17 +101,21 @@ def read_response(interface, response_chars):
         biti = 0
         for arg in resp['args']:
             if isinstance(arg[1], str):
-                nb = result[arg[1]]
+                # this is a packet with variable length data
+                r = interface.read(result[arg[1]])
+                if arg[2] == 'i':
+                    r = [ord(c) for c in r]
+                result[arg[0]] = r
+                nb = 8 * result[arg[1]]
             else:
                 nb = arg[1]
-            if arg[0] != '':
-                result[arg[0]] = extract(arg[2], nb,
-                        data, bytei, biti)
+                if arg[0] != '':
+                    result[arg[0]] = extract(arg[2], nb,
+                            data, bytei, biti)
             biti += nb
             if biti > 7:
                 bytei += int(biti // 8)
                 biti = biti % 8
-    # TODO packets with extra data
     return result
 
 
