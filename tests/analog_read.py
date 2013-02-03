@@ -22,7 +22,7 @@ try:
 except ImportError:
     print "please install qarg for argument parsing: github.com/braingram/qarg"
 
-i = ioio.IOIO(port)
+i = ioio.IOIO(port, timeout=0.1)
 
 i.write('set_pin_analog_in', pin=pin)
 i.write('set_analog_in_sampling', pin=pin, enable=True)
@@ -48,6 +48,8 @@ def analog_read():
         packet['values'] = values
     return packet
 
-
-while True:
-    print analog_read()
+try:
+    while True:
+        print analog_read()
+except KeyboardInterrupt:
+    i.write('soft_reset')
