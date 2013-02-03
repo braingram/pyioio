@@ -8,8 +8,7 @@ from .base import Interface
 # serial.Serial is first so read/write is overridden
 class RS232Interface(serial.Serial, Interface):
     def __init__(self, port, **kwargs):
-        if ('baudrate' not in kwargs):
-            kwargs['baudrate'] = 115200
+        kwargs['baudrate'] = kwargs.get('baudrate', 115200)
         serial.Serial.__init__(self, port, **kwargs)
         Interface.__init__(self)
 

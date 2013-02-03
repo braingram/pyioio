@@ -91,6 +91,8 @@ def read_response(interface, response_chars):
     Read a response
     """
     rtype = interface.read(1)
+    if rtype == '':
+        return {}
     if (rtype not in response_chars):
         raise ValueError("Unknown response type: %r" % rtype)
     resp = response_chars[rtype]
