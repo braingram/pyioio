@@ -3,6 +3,7 @@
 see: firmware/app_layer_v1/protocol_defs.h
 """
 
+import logging
 import math
 
 
@@ -23,7 +24,7 @@ def packet(char, *args):
         else:
             raise ValueError('Invalid packet arg: %r, %s, ' \
                 'must be len == 2 or 3' % (char, arg))
-	if not isinstance(k, str):
+        if not isinstance(k, str):
             raise ValueError('arg[0] must be a string: %r, %s' \
                 % (char, arg))
         if isinstance(n, int):
@@ -52,17 +53,18 @@ def packet(char, *args):
 
 def extract(dtype, nbits, data, bytei, biti):
     if dtype == 'b':  # extract boolean
-        return bool(ord(data[bytei]) & (0x80 >> biti))
+        return bool(ord(data[bytei]) & (0x01 << biti))
     elif dtype == 'i':  # extract integer
         if nbits == 1:
             return int(extract('b', nbits, data, bytei, biti))
         r = 0
+        m = (0x01 << (nbits - 1))
         for i in xrange(nbits):
             B = bytei + int((i + biti) // 8)
             b = (i + biti) % 8
-            r = (r << 1)
+            r = (r >> 1)
             if extract('b', 1, data, B, b):
-                r |= 0x01
+                r |= m
         return r
     elif dtype == 'c':  # extract character array/string
         if biti == 0:  # on a byte boundry
@@ -140,13 +142,11 @@ def package(spec, data, result=None, biti=0):
         # test if a new byte is needed
         nB = math.ceil((biti + nb) / 8.)
         while nB > len(result):
-            result += ['\x00',]
+            result += ['\x00', ]
         return result
     datum = data[name]
     dtype = item[2]
-    print datum, type(datum)
     B, b = divmod(biti, 8)
-    #if isinstance(datum, str):
     if dtype == 'c':
         data = str(datum)
         if b != 0:
@@ -160,22 +160,23 @@ def package(spec, data, result=None, biti=0):
     nB = math.ceil((biti + nb) / 8.)
     while nB > len(result):
         result += ['\x00', ]
-    #if isinstance(datum, bool):
     if dtype == 'b':
         datum = bool(datum)
         # flip 1 bit
         if datum:
-            result[B] = chr(ord(result[B]) | (0x80 >> b))
+            result[B] = chr(ord(result[B]) | (0x01 << b))
         return result
     # test bool first as True isinstance of int
-    #if isinstance(datum, int):
     if dtype == 'i':
         datum = int(datum)
-        # flip many bits
         if (nb > 8):
-            raise NotImplementedError('TODO')
+            if (nb != 16):
+                raise NotImplementedError( \
+                        'package does not support >8 and !=16 bit ints')
+            result[B] = chr(ord(result[B]) | (datum & 0xFF))
+            result[B + 1] = chr(ord(result[B + 1]) | (datum >> 8))
         if datum:
-            result[B] = chr(ord(result[B]) | (datum << (8 - b - nb)))
+            result[B] = chr(ord(result[B]) | (datum << b))
         return result
     raise ValueError('Invalid datum type: %s' % datum)
 
@@ -184,7 +185,7 @@ def write_command(interface, commands, name, **kwargs):
     if name not in commands:
         raise ValueError('Unknown command: %s' % name)
     cmd = commands[name]
-    payload = [cmd['char'],]
+    payload = [cmd['char'], ]
     payload += package(cmd['args'], kwargs)
-    print repr(''.join(payload))
+    logging.debug('Writing command: %r' % repr(''.join(payload)))
     interface.write(''.join(payload))

@@ -65,7 +65,7 @@ commands = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),
+        ('data', 'size', 'c')),  # TODO variable length
     'set_pin_uart': packet('\x0F',
         ('pin', 6, 'i'),
         ('', 2),
@@ -89,7 +89,7 @@ commands = {
         ('res_size_neq_total', 1, 'b'),
         ('data_size_neq_total', 1, 'b'),
         ('data_size', 8, 'i'),
-        ('data', 'data_size', 'c')),
+        ('data', 'data_size', 'c')),  # TODO variable length
     'set_pin_spi': packet('\x12',
         ('pin', 6, 'i'),
         ('', 2),
@@ -110,7 +110,7 @@ commands = {
         ('addr_lsb', 8, 'i'),
         ('write_size', 8, 'i'),
         ('read_size', 8, 'i'),
-        ('data', 'write_size', 'c')),
+        ('data', 'write_size', 'c')),  # TODO variable length
     #'\x15': ''
     'icsp_six': packet('\x16',
         ('inst', 24, 'c')),
@@ -157,7 +157,10 @@ responses = {
         ('pin', 6, 'i')),
     'report_periodic_digital_in_status': packet('\x05',
         ('size', 8, 'i')),
-    #'\x06': ''
+    'set_change_notify': packet('\x06',
+        ('cn', 1, 'b'),
+        ('', 1),
+        ('pin', 6, 'i')),
     #'\x07': ''
     #'\x08': ''
     #'\x09': ''
@@ -172,7 +175,7 @@ responses = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),
+        ('data', 'size', 'c')),  # TODO variable length
     # NOTE bytes_to_add = N of additional bytes to read
     'uart_report_tx_status': packet('\x0F',
         ('uart_num', 2, 'i'),
@@ -186,7 +189,7 @@ responses = {
         ('spi_num', 2, 'i'),
         ('ss_pin', 6, 'i'),
         ('', 2),
-        ('data', 'size', 'c')),
+        ('data', 'size', 'c')),  # TODO variable length
     # NOTE bytes_to_add = N of additional bytes to read
     'spi_report_tx_status': packet('\x12',
         ('spi_num', 2, 'i'),
