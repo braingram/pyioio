@@ -40,7 +40,7 @@ IOIO Functions
     - Output (test: led.py)
 - Analog Input (test: analog_in.py)
     - !! how do I store number of analog pins? for report_analog_in_status
-- PWM Output
+- PWM Output (not working test: pwm.py) !! need to store state for this too
 - Pulse Input
 - UART
 - SPI
