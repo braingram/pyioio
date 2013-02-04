@@ -179,6 +179,10 @@ def package(spec, data, result=None, biti=0):
             if (nb != 16):
                 raise NotImplementedError( \
                         'package does not support >8 and !=16 bit ints')
+            if (b != 0):
+                raise NotImplementedError( \
+                        'package does nto support packing 16 bit ' \
+                        'ints across bytes')
             result[B] = chr(ord(result[B]) | (datum & 0xFF))
             result[B + 1] = chr(ord(result[B + 1]) | (datum >> 8))
         else:
@@ -194,5 +198,6 @@ def write_command(interface, commands, name, **kwargs):
     cmd = commands[name]
     payload = [cmd['char'], ]
     payload += package(cmd['args'], kwargs)
-    logging.debug('Writing command: %r' % repr(''.join(payload)))
+    logging.debug('Writing command: %r' % \
+            repr(['%08.0i' % int(bin(ord(b))[2:]) for b in payload]))
     interface.write(''.join(payload))

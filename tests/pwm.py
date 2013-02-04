@@ -5,14 +5,13 @@ import time
 
 import ioio
 
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 port = '/dev/ttyACM0'
 pin = 0
 pnum = 0
 
-frequency = 1000
-duty_cycle = 0.5
+frequency = 100
 
 clk = 16000000
 scales = [1, 8, 64, 256]
@@ -82,7 +81,7 @@ i = ioio.IOIO(port, timeout=0.01)
 
 i.write('set_pin_digital_out', pin=pin, open_drain=False, value=False)
 i.write('set_pin_pwm', pin=pin, enable=True, pwm_num=pnum)
-steps = 10
+steps = 100
 first = True
 try:
     while True:
@@ -93,6 +92,8 @@ try:
                     dc = 1 - dc
                 #print "Duty Cycle: %s" % dc
                 period, sl, sh, pw, fraction = pwm_params(frequency, dc)
+                if pw > period:
+                    pw = period
                 #print period, sl, sh, pw, fraction
                 if first:
                     i.write('set_pwm_period', pwm_num=pnum, scale_l=sl, \
@@ -103,6 +104,7 @@ try:
                 r = i.read()
                 if r != {}:
                     print r
+                time.sleep(0.1)
         #i.write('set_pin_pwm', pin=pin, enable=False, pwm_num=pnum)
         #first = False
         #print "pausing..."
