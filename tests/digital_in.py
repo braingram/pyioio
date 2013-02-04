@@ -27,10 +27,13 @@ i = ioio.IOIO(port)
 i.write('set_pin_digital_in', pin=pin, pull=state)
 i.write('set_change_notify', pin=pin, cn=True)
 
+# change notify
 cn = i.read()  # should be a 'set_change_notify' event
 print cn
+assert cn['name'] == 'set_change_notify'
 di = i.read()  # should be a 'report_digital_in_status' event
 print di
+assert di['name'] == 'report_digital_in_status'
 
 i.write('soft_reset')
 del i

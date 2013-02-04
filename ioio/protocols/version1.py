@@ -42,7 +42,7 @@ commands = {
         ('fraction', 2, 'i'),
         ('pwm_num', 4, 'i'),
         ('', 2),
-        ('dc', 16, 'i')),
+        ('dc', 16, 'i')),  # duty cycle
     'set_pwm_period': packet('\x0A',
         ('scale_l', 1, 'i'),
         ('pwm_num', 4, 'i'),

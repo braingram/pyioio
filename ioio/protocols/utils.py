@@ -181,8 +181,9 @@ def package(spec, data, result=None, biti=0):
                         'package does not support >8 and !=16 bit ints')
             result[B] = chr(ord(result[B]) | (datum & 0xFF))
             result[B + 1] = chr(ord(result[B + 1]) | (datum >> 8))
-        if datum:
-            result[B] = chr(ord(result[B]) | (datum << b))
+        else:
+            if datum:
+                result[B] = chr(ord(result[B]) | (datum << b))
         return result
     raise ValueError('Invalid datum type: %s' % datum)
 

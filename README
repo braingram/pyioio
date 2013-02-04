@@ -27,3 +27,23 @@ Module layout:
 
     ioio.protocols : IOIO protocols
         Abstraction to (hopefully) support multiple IOIO protcol versions
+
+
+TODO
+------
+
+IOIO Functions
+- Digital I/O
+    - Input
+        - Change Notify : (test: digital_in.py)
+        - Periodic Sampling : is this implemented in firmware?
+    - Output (test: led.py)
+- Analog Input (test: analog_in.py)
+    - !! how do I store number of analog pins? for report_analog_in_status
+- PWM Output
+- Pulse Input
+- UART
+- SPI
+- TWI/I2C
+- ICSP
+- Incap
