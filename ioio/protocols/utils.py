@@ -181,7 +181,7 @@ def package(spec, data, result=None, biti=0):
                         'package does not support >8 and !=16 bit ints')
             if (b != 0):
                 raise NotImplementedError( \
-                        'package does nto support packing 16 bit ' \
+                        'package does not support packing 16 bit ' \
                         'ints across bytes')
             result[B] = chr(ord(result[B]) | (datum & 0xFF))
             result[B + 1] = chr(ord(result[B + 1]) | (datum >> 8))

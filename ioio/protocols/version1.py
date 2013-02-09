@@ -51,7 +51,7 @@ default_kwargs = {
             'scale_l': 0,
             'pwm_num': 0,
             'scale_h': 0,
-            'period': 0,
+            'period': 65535,
             },
         'set_pin_analog_in': {
             'pin': 46,
