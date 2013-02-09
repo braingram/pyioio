@@ -35,5 +35,7 @@ di = i.read()  # should be a 'report_digital_in_status' event
 print di
 assert di['name'] == 'report_digital_in_status'
 
+i.write('set_change_notify', pin=pin, cn=False)
+i.write('set_pin_digital_in', pin=pin, pull=0)
 i.write('soft_reset')
 del i

@@ -22,4 +22,5 @@ _ = raw_input('Press enter to turn off led')
 i.write('set_digital_out_level', pin=0, value=1)
 
 _ = raw_input('Press enter to exit...')
+i.write('set_pin_digital_in', pin=0, pull=0)
 i.write('soft_reset')

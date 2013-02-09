@@ -194,6 +194,7 @@ commands = {
     'icsp_config': packet('\x1A',
         ('enable', 1, 'b'),
         ('', 7)),
+    # incap = pulse_input
     'incap_config': packet('\x1B',
         ('incap_num', 4, 'i'),
         ('', 4),
@@ -300,7 +301,8 @@ responses = {
     'incap_report': packet('\x1C',
         ('incap_num', 4, 'i'),
         ('', 2),
-        ('size', 2, 'i')),
+        ('size', 2, 'i'),
+        ('length', 'size', 'i')),
     'soft_close': packet('\x1D'),
 }
 

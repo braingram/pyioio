@@ -8,7 +8,7 @@ import ioio
 logging.basicConfig(level=logging.DEBUG)
 
 port = '/dev/ttyACM0'
-pin = 0
+pin = 1
 pnum = 0
 
 frequency = 100
@@ -123,5 +123,7 @@ except KeyboardInterrupt:
 #   - period : 16
 #_ = raw_input('press enter to exit...')
 
+i.write('set_pin_pwm', pin=pin, enable=False, pwm_num=pnum)
+i.write('set_pin_digital_in', pin=pin, pull=0)
 i.write('soft_reset')
 del i
