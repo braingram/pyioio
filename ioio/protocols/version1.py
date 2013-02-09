@@ -6,13 +6,86 @@ see: firmware/app_layer_v1/protocol_defs.h
 from .utils import packet, to_char_lookup
 from .base import Protocol
 
+default_kwargs = {
+        'hard_reset': {
+            'magic': 'IOIO',
+            },
+        'check_interface': {
+            'id': 'IOIO0003',
+            },
+        'set_pin_digital_out': {
+            'open_drain': 1,
+            'value': 0,
+            'pin': 0,
+            },
+        'set_digital_out_level': {
+            'pin': 0,
+            'value': 0,
+            },
+        'set_pin_digital_in': {
+            # 0: floating, 1: up, 2: down
+            'pull': 2,
+            'pin': 0,
+            },
+        'set_change_notify': {
+            'cn': True,
+            'pin': 0,
+            },
+        'register_periodic_digital_sampling': {
+            'pin': 0,
+            # TODO look up freq scale
+            'freq_scale': 0,
+            },
+        'set_pin_pwm': {
+            'pin': 0,
+            'pwm_num': 0,
+            'enable': True,
+            },
+        'set_pwm_duty_cycle': {
+            'fraction': 0,
+            'pwm_num': 0,
+            'dc': 0,
+            },
+        'set_pwm_period': {
+            # TODO better defaults
+            'scale_l': 0,
+            'pwm_num': 0,
+            'scale_h': 0,
+            'period': 0,
+            },
+        'set_pin_analog_in': {
+            'pin': 46,
+            },
+        'set_analog_in_sampling': {
+            'pin': 46,
+            'enable': True,
+            },
+        'uart_config': {
+            'parity': 0,
+            'two_stop_bits': False,
+            'speed4x': False,
+            'uart_num': 0,
+            'rate': 9600,
+            },
+        'uart_data': {
+            'uart_num': 0,
+            },
+        'set_pin_uart': {
+            'pin': 6,
+            'uart_num': 0,
+            # TODO look this up
+            'dir': 0,
+            'enable': True,
+            }
+        # TODO spi, i2c, icsp, incap
+        }
 
 commands = {
     'hard_reset': packet('\x00',
         ('magic', 32, 'c')),
     'soft_reset': packet('\x01'),
     'check_interface': packet('\x02',
-        ('interface', 64, 'c')),
+        ('id', 64, 'c')),
     'set_pin_digital_out': packet('\x03',
         ('open_drain', 1, 'b'),
         ('value', 1, 'b'),
@@ -236,5 +309,5 @@ response_chars = to_char_lookup(responses)
 
 class Version1Protocol(Protocol):
     def __init__(self, connection_packet):
-        Protocol.__init__(self, commands, responses)
+        Protocol.__init__(self, commands, responses, default_kwargs)
         self.connection_packet = connection_packet

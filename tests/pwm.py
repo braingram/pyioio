@@ -21,7 +21,7 @@ scale_encodings = {
         64: 2,
         256: 1,
         }
-max_period = 2 ** 16  # 65536
+max_period = 65536
 
 
 def find_scale_and_period(freq):
