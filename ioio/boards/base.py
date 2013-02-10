@@ -27,13 +27,13 @@ class Board(object):
         self.icsp_pins = icsp_pins
         pass
 
-    @property('n_pins')
     def get_n_pins(self):
         return len(self.pins)
+    n_pins = property(get_n_pins)
 
-    @property('n_analog_pins')
     def get_n_analog_pins(self):
         return reduce(lambda x, y: x + int(y.analog), self.pins, 0)
+    n_analog_pins = property(get_n_analog_pins)
 
     def valid_pin(self, i):
         return ((i >= 0) and (i < len(self.pins)))
