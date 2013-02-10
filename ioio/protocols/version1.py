@@ -258,6 +258,7 @@ responses = {
     'uart_report_tx_status': packet('\x0F',
         ('uart_num', 2, 'i'),
         ('bytes_to_add', 14, 'i')),
+        #('data', 'bytes_to_add', 'c')),
     'spi_status': packet('\x10',
         ('spi_num', 2, 'i'),
         ('', 5),
@@ -272,6 +273,7 @@ responses = {
     'spi_report_tx_status': packet('\x12',
         ('spi_num', 2, 'i'),
         ('bytes_to_add', 14, 'i')),
+        #('data', 'bytes_to_add', 'c')),
     'i2c_status': packet('\x13',
         ('i2c_num', 2, 'i'),
         ('', 5),
@@ -284,9 +286,11 @@ responses = {
     'i2c_report_tx_status': packet('\x15',
         ('i2c_num', 2, 'i'),
         ('bytes_to_add', 14, 'i')),
+        #('data', 'bytes_to_add', 'c')),
     # NOTE bytes_to_add = N of additional bytes to read
     'icsp_report_rx_status': packet('\x16',
         ('bytes_to_add', 16, 'i')),
+        #('data', 'bytes_to_add', 'c')),
     'icsp_result': packet('\x17',
         ('reg', 16, 'c')),
     #'\x18': ''

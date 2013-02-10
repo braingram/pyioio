@@ -104,6 +104,7 @@ def read_response(interface, response_chars):
         for arg in resp['args']:
             if isinstance(arg[1], str):
                 # this is a packet with variable length data
+                print "Reading %s packets" % result[arg[1]]
                 r = interface.read(result[arg[1]])
                 if arg[2] == 'i':
                     r = [ord(c) for c in r]
@@ -122,6 +123,20 @@ def read_response(interface, response_chars):
 
 
 def package(spec, data, result=None, biti=0):
+    """
+    spec : list of 'arguments'
+        each 'argument' is a 3 tuple of
+            ('name', bit_length, data_type)
+
+    data : dict
+        data to package, keys = argument names
+
+    result : list of chars
+        partial result (will be added to and returned)
+
+    biti : int
+        current bit offset (within the current [result[-1]] byte)
+    """
     if len(spec) == 0:
         return []
     if len(spec) > 1:
@@ -133,7 +148,7 @@ def package(spec, data, result=None, biti=0):
             r = package((item, ), data, r, biti)
             nb = item[1]
             if isinstance(nb, str):
-                nb = data[item[0]]
+                nb = data[item[1]]
             biti += nb
         return r
     if result is None:
@@ -142,7 +157,7 @@ def package(spec, data, result=None, biti=0):
     name = item[0]
     nb = item[1]
     if isinstance(nb, str):
-        nb = data[name]
+        nb = data[nb]
     if name == '':
         # add a bunch of 0s
         # test if a new byte is needed
