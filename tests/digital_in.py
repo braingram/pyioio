@@ -2,6 +2,7 @@
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
+import time
 
 import ioio
 
@@ -34,6 +35,15 @@ assert cn['name'] == 'set_change_notify'
 di = i.read()  # should be a 'report_digital_in_status' event
 print di
 assert di['name'] == 'report_digital_in_status'
+try:
+    while True:
+        p = i.read()
+        if p != {}:
+            print p
+        else:
+            time.sleep(0.1)
+except KeyboardInterrupt:
+    pass
 
 i.write('set_change_notify', pin=pin, cn=False)
 i.write('set_pin_digital_in', pin=pin, pull=0)

@@ -52,8 +52,7 @@ try:
     while True:
         pp = i.read()
         if pp == {}:
-            print "waiting for pulse on %s" % pin
-            time.sleep(1.)
+            time.sleep(0.1)
         else:
             print pp
 except KeyboardInterrupt:

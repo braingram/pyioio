@@ -104,7 +104,6 @@ def read_response(interface, response_chars):
         for arg in resp['args']:
             if isinstance(arg[1], str):
                 # this is a packet with variable length data
-                print "Reading %s packets" % result[arg[1]]
                 r = interface.read(result[arg[1]])
                 if arg[2] == 'i':
                     r = [ord(c) for c in r]
