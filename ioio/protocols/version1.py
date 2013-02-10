@@ -138,7 +138,7 @@ commands = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),  # TODO variable length
+        ('data', 'size', 'c')),
     'set_pin_uart': packet('\x0F',
         ('pin', 6, 'i'),
         ('', 2),
@@ -162,7 +162,7 @@ commands = {
         ('res_size_neq_total', 1, 'b'),
         ('data_size_neq_total', 1, 'b'),
         ('data_size', 8, 'i'),
-        ('data', 'data_size', 'c')),  # TODO variable length
+        ('data', 'data_size', 'c')),
     'set_pin_spi': packet('\x12',
         ('pin', 6, 'i'),
         ('', 2),
@@ -183,14 +183,14 @@ commands = {
         ('addr_lsb', 8, 'i'),
         ('write_size', 8, 'i'),
         ('read_size', 8, 'i'),
-        ('data', 'write_size', 'c')),  # TODO variable length
+        ('data', 'write_size', 'c')),
     #'\x15': ''
     'icsp_six': packet('\x16',
         ('inst', 24, 'c')),
     'icsp_regout': packet('\x17'),
     'icsp_prog_enter': packet('\x18'),
     'icsp_prog_exit': packet('\x19'),
-    # FIXME per the protocol only enable:1 is defined, i'm guessing the '':7
+    # per the protocol only enable:1 is defined, i'm guessing the '':7
     'icsp_config': packet('\x1A',
         ('enable', 1, 'b'),
         ('', 7)),
@@ -253,8 +253,7 @@ responses = {
     'uart_data': packet('\x0E',
         ('size', 6, 'i'),
         ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),  # TODO variable length
-    # NOTE bytes_to_add = N of additional bytes to read
+        ('data', 'size', 'c')),
     'uart_report_tx_status': packet('\x0F',
         ('uart_num', 2, 'i'),
         ('bytes_to_add', 14, 'i')),
@@ -268,8 +267,7 @@ responses = {
         ('spi_num', 2, 'i'),
         ('ss_pin', 6, 'i'),
         ('', 2),
-        ('data', 'size', 'c')),  # TODO variable length
-    # NOTE bytes_to_add = N of additional bytes to read
+        ('data', 'size', 'c')),
     'spi_report_tx_status': packet('\x12',
         ('spi_num', 2, 'i'),
         ('bytes_to_add', 14, 'i')),
