@@ -191,6 +191,7 @@ class Version1Responses(object):
     def soft_close(self, io):
         return {'name': 'soft_close'}
 
+
 class Version1Commands(object):
     def write(self, interface, command, *args):
         if not hasattr(self, command):
