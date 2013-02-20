@@ -6,29 +6,6 @@ see: firmware/app_layer_v1/protocol_defs.h
 from .utils import packet, to_char_lookup
 from .base import Protocol
 
-constants = {
-        # digital in
-        'floating': 0,
-        'up': 1,
-        'down': 2,
-        # pulse_in
-        '16MHz': 0,
-        '2MHz': 1,
-        '250kHz': 2,
-        '62.5kHz': 3,
-        'positive': 0,
-        'negative': 1,
-        'frequency': 2,
-        'frequency4x': 3,
-        'frequency16x': 4,
-        # pwm
-        'clk': 16000000,
-        '1': 0,
-        '8': 3,
-        '64': 2,
-        '256': 1,
-        'maxperiod': 65536,
-        }
 
 default_kwargs = {
         'hard_reset': {
