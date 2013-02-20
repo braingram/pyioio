@@ -11,7 +11,7 @@ peripherals:
 check valid pin/pwm/uart/spi...
 """
 
-from .base import Board, make_pin_list
+from .base import Board
 
 # each pin can be
 # - p.out
@@ -30,7 +30,7 @@ IOIO0002_pins = dict(
 # pins,
 # n_pwms, n_uarts, n_spis, incap_doubles, incap_singles, twi_pins,
 # icsp_pins
-IOIO0002 = (make_pin_list(**IOIO0002_pins),
+IOIO0002 = (IOIO0002_pins,
     9, 4, 3, (0, 2, 4), (6, 7, 8), ((4, 5), (47, 48), (26, 25)),
     ((36, 37, 38), ))
 
@@ -45,7 +45,7 @@ IOIO0004_pins = dict(
             43, 44, 45, 46),
         )
 
-IOIO0004 = (make_pin_list(**IOIO0004_pins),
+IOIO0004 = (IOIO0004_pins,
     9, 4, 3, (0, 2, 4), (6, 7, 8), ((4, 5), (47, 48), (26, 25)),
     ((36, 37, 38), ))
 

@@ -1,18 +1,6 @@
 #!/usr/bin/env python
 
-import collections
-
-
-Pin = collections.namedtuple('Pin', ('p_in', 'p_out', 'analog'))
-
-
-def make_pin_list(p_in, p_out, analog, n=None):
-    if n is None:
-        n = max(max(p_in), max(p_out), max(analog))
-    pins = []
-    for i in xrange(n):
-        pins.append(Pin(i in p_in, i in p_out, i in analog))
-    return pins
+from . import hwmodules
 
 
 class Board(object):
@@ -22,11 +10,12 @@ class Board(object):
             'p_in': hwmodules.PinSet(pins['p_in']),
             'p_out': hwmodules.PinSet(pins['p_out']),
             'analog': hwmodules.PinSet(pins['analog']),
-            'pwm': hwmodules.PWM(n_pwms),
-            'uart': hwmodules.UART(n_uarts),
-            'spi': hwmodules.SPI(n_spis),
-            'incap_double': hwmodules.IncapDouble(incap_doubles),
-            'incap_single': hwmodules.IncapSingle(incap_singles),
+            'pwm': hwmodules.PWM(pins['p_out'], n_pwms),
+            # TODO distinguish between p_in and p_out
+            'uart': hwmodules.UART(pins['p_out'], n_uarts),
+            'spi': hwmodules.SPI(pins['p_out'], n_spis),
+            'incap_double': hwmodules.IncapDouble(pins['p_in'], incap_doubles),
+            'incap_single': hwmodules.IncapSingle(pins['p_in'], incap_singles),
             'twi': hwmodules.TWI(twi_pins),
             'icsp': hwmodules.ICSP(icsp_pins),
         }

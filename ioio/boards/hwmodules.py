@@ -58,18 +58,21 @@ class PinSet(HWSet):
         'up': 1,
         'down': 2,
     }
+
     def __init__(self, pins):
         HWSet.__init__(self, pins)
 
-    valid_pin = valid
-    pin = item
-    available_pin = available
+    valid_pin = HWSet.valid
+    pin = HWSet.item
+    available_pin = HWSet.available
 
 
 class HWModule(HWSet):
-    def __init__(self, pins, indices):
+    def __init__(self, pins, indices=None):
+        if indices is None:
+            indices = range(len(pins))
         HWSet.__init__(self, indices)
-        self.pins = pins
+        self.pins = PinSet(pins)
         # settings for each item
         self.settings = {}
 
@@ -78,6 +81,9 @@ class HWModule(HWSet):
 
     def pin(self, i, value=None):
         return self.pins.item(i, value)
+
+    def available_pin(self, exclude=None):
+        return self.pins.available(exclude)
 
 
 class PWM(HWModule):

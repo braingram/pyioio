@@ -5,7 +5,7 @@ see: firmware/app_layer_v1/protocol_defs.h
 
 
 class Protocol(object):
-    def __init__(self, commands, responses, default_kwargs):
+    def __init__(self, commands, responses):
         self.commands = commands
         self.responses = responses
 
@@ -13,4 +13,4 @@ class Protocol(object):
         return self.responses.read(interface)
 
     def write(self, interface, name, *args):
-        self.command.write(interface, name, *args)
+        self.commands.write(interface, name, *args)

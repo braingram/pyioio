@@ -33,10 +33,10 @@ class IOIO(object):
         self.board = boards.find(self.protocol)
 
     def read(self):
-        return self.protocol.read_response(self.interface)
+        return self.protocol.read(self.interface)
 
-    def write(self, name, **kwargs):
-        self.protocol.write_command(self.interface, name, **kwargs)
+    def write(self, name, *args):
+        self.protocol.write(self.interface, name, *args)
 
     # configuration functions
     # control functions

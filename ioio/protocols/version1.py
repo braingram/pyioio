@@ -160,7 +160,7 @@ class Version1Responses(object):
                 'twi_num': (0x03 & ord(b0)),
                 'bytes_to_add': ((ord(b0) >> 2) | (ord(b1) << 6))}
 
-    def icsp_report_tx_status(self, io):
+    def icsp_report_rx_status(self, io):
         return {'name': 'icsp_report_rx_status',
                 'bytes_to_add': struct.unpack('h', io.read(2))[0]}
 
