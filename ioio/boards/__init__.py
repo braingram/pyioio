@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from . import hwmodules
 from . import versions
 
 
