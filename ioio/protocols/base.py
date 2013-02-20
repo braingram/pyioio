@@ -13,12 +13,15 @@ class Protocol(object):
         self.default_kwargs = default_kwargs
         self.respones = responses
         self._response_chars = utils.to_char_lookup(responses)
+        self.state = {}
 
     def read_response(self, interface):
         """
         Read a response
         """
-        return utils.read_response(interface, self._response_chars)
+        r = utils.read_response(interface, self._response_chars)
+        self.update_state(r)
+        return r
 
     def write_command(self, interface, name, **kwargs):
         if name in self.default_kwargs:
@@ -28,3 +31,7 @@ class Protocol(object):
             kw = kwargs
         return utils.write_command(interface, self.commands,
             name, **kw)
+
+    def update_state(self, response):
+        # used for state dependent reading like report_analog_in_status
+        pass

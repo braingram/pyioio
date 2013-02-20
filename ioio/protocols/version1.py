@@ -6,6 +6,30 @@ see: firmware/app_layer_v1/protocol_defs.h
 from .utils import packet, to_char_lookup
 from .base import Protocol
 
+constants = {
+        # digital in
+        'floating': 0,
+        'up': 1,
+        'down': 2,
+        # pulse_in
+        '16MHz': 0,
+        '2MHz': 1,
+        '250kHz': 2,
+        '62.5kHz': 3,
+        'positive': 0,
+        'negative': 1,
+        'frequency': 2,
+        'frequency4x': 3,
+        'frequency16x': 4,
+        # pwm
+        'clk': 16000000,
+        '1': 0,
+        '8': 3,
+        '64': 2,
+        '256': 1,
+        'maxperiod': 65536,
+        }
+
 default_kwargs = {
         'hard_reset': {
             'magic': 'IOIO',
@@ -242,6 +266,7 @@ responses = {
     #'\x08': ''
     #'\x09': ''
     #'\x0A': ''
+    # NOTE report_analog_in_status will be modified during runtime
     'report_analog_in_status': packet('\x0B'),
     'report_analog_in_format': packet('\x0C',
         ('num_pins', 8, 'i'),
@@ -315,3 +340,22 @@ class Version1Protocol(Protocol):
     def __init__(self, connection_packet):
         Protocol.__init__(self, commands, responses, default_kwargs)
         self.connection_packet = connection_packet
+
+    def update_state(self, response):
+        if response['name'] == 'report_analog_in_format':
+            num_pins = response['num_pins']
+            if num_pins == 0:
+                return
+            # modify self._response_chars
+            pins = response['pins']
+            args = []
+            for pin in response[pins]:
+                h = '%s_h' % pin
+                l = '%s_l' % pin
+                # TODO figure out analog format packing
+                args.append((h, 8, 'i'))
+                args.append((l, 8, 'i'))
+
+            resp = self._response_chars['report_analog_in_status']
+            self._response_chars['report_analog_in_status'] = \
+                    packet(resp['char'], *args)

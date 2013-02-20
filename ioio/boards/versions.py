@@ -27,6 +27,9 @@ IOIO0002_pins = dict(
             45, 46),
         )
 
+# pins,
+# n_pwms, n_uarts, n_spis, incap_doubles, incap_singles, twi_pins,
+# icsp_pins
 IOIO0002 = (make_pin_list(**IOIO0002_pins),
     9, 4, 3, (0, 2, 4), (6, 7, 8), ((4, 5), (47, 48), (26, 25)),
     (36, 37, 38))

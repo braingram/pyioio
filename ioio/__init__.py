@@ -38,6 +38,10 @@ class IOIO(object):
     def write(self, name, **kwargs):
         self.protocol.write_command(self.interface, name, **kwargs)
 
+    # configuration functions
+    # update functions
+    # control functions
+
 
 class ThreadedIOIO(IOIO):
     def __init__(self, port, **kwargs):
