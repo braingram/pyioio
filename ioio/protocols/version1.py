@@ -3,336 +3,397 @@
 see: firmware/app_layer_v1/protocol_defs.h
 """
 
-from .utils import packet, to_char_lookup
+import struct
+
 from .base import Protocol
 
 
-default_kwargs = {
-        'hard_reset': {
-            'magic': 'IOIO',
-            },
-        'check_interface': {
-            'id': 'IOIO0003',
-            },
-        'set_pin_digital_out': {
-            'open_drain': 1,
-            'value': 0,
-            'pin': 0,
-            },
-        'set_digital_out_level': {
-            'pin': 0,
-            'value': 0,
-            },
-        'set_pin_digital_in': {
-            # 0: floating, 1: up, 2: down
-            'pull': 2,
-            'pin': 0,
-            },
-        'set_change_notify': {
-            'cn': True,
-            'pin': 0,
-            },
-        'register_periodic_digital_sampling': {
-            'pin': 0,
-            # TODO look up freq scale
-            'freq_scale': 0,
-            },
-        'set_pin_pwm': {
-            'pin': 0,
-            'pwm_num': 0,
-            'enable': True,
-            },
-        'set_pwm_duty_cycle': {
-            'fraction': 0,
-            'pwm_num': 0,
-            'dc': 0,
-            },
-        'set_pwm_period': {
-            # TODO better defaults
-            'scale_l': 0,
-            'pwm_num': 0,
-            'scale_h': 0,
-            'period': 65535,
-            },
-        'set_pin_analog_in': {
-            'pin': 46,
-            },
-        'set_analog_in_sampling': {
-            'pin': 46,
-            'enable': True,
-            },
-        'uart_config': {
-            'parity': 0,
-            'two_stop_bits': False,
-            'speed4x': False,
-            'uart_num': 0,
-            'rate': 9600,
-            },
-        'uart_data': {
-            'uart_num': 0,
-            },
-        'set_pin_uart': {
-            'pin': 6,
-            'uart_num': 0,
-            # TODO look this up
-            'dir': 0,
-            'enable': True,
-            }
-        # TODO spi, i2c, icsp, incap
-        }
+class Version1Responses(object):
+    """
+    This requires some 'state' to know how many analog channels to read
+    """
+    def __init__(self):
+        self.mapping = {
+                '\x00': self.establish_connection,
+                '\x01': self.soft_reset,
+                '\x02': self.check_interface_response,
+                #'\x03':
+                '\x04': self.report_digital_in_status,
+                '\x05': self.report_periodic_digital_in_status,
+                '\x06': self.set_change_notify,
+                '\x07': self.register_periodic_digital_sampling,
+                #'\x08' ... '\x0A'
+                '\x0B': self.report_analog_in_status,
+                '\x0C': self.report_analog_in_format,
+                '\x0D': self.uart_status,
+                '\x0E': self.uart_data,
+                '\x0F': self.uart_report_tx_status,
+                '\x10': self.spi_status,
+                '\x11': self.spi_data,
+                '\x12': self.spi_report_tx_status,
+                '\x13': self.twi_status,
+                '\x14': self.twi_result,
+                '\x15': self.twi_report_tx_status,
+                '\x16': self.icsp_report_rx_status,
+                '\x17': self.icsp_result,
+                #'\x18':
+                #'\x19':
+                '\x1A': self.icsp_config,
+                '\x1B': self.incap_status,
+                '\x1C': self.incap_report,
+                '\x1D': self.soft_close,
+                }
 
-commands = {
-    'hard_reset': packet('\x00',
-        ('magic', 32, 'c')),
-    'soft_reset': packet('\x01'),
-    'check_interface': packet('\x02',
-        ('id', 64, 'c')),
-    'set_pin_digital_out': packet('\x03',
-        ('open_drain', 1, 'b'),
-        ('value', 1, 'b'),
-        ('pin', 6, 'i')),
-    'set_digital_out_level': packet('\x04',
-        ('value', 1, 'b'),
-        ('', 1),
-        ('pin', 6, 'i')),
-    'set_pin_digital_in': packet('\x05',
-        ('pull', 2, 'i'),
-        ('pin', 6, 'i')),
-    'set_change_notify': packet('\x06',
-        ('cn', 1, 'b'),
-        ('', 1),
-        ('pin', 6, 'i')),
-    'register_periodic_digital_sampling': packet('\x07',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('freq_scale', 8, 'i')),
-    'set_pin_pwm': packet('\x08',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('pwm_num', 4, 'i'),
-        ('', 3),
-        ('enable', 1, 'b')),
-    'set_pwm_duty_cycle': packet('\x09',
-        ('fraction', 2, 'i'),
-        ('pwm_num', 4, 'i'),
-        ('', 2),
-        ('dc', 16, 'i')),  # duty cycle
-    'set_pwm_period': packet('\x0A',
-        ('scale_l', 1, 'i'),
-        ('pwm_num', 4, 'i'),
-        ('', 2),
-        ('scale_h', 1, 'i'),
-        ('period', 16, 'i')),
-    'set_pin_analog_in': packet('\x0B',
-        ('pin', 8, 'i')),
-    'set_analog_in_sampling': packet('\x0C',
-        ('pin', 6, 'i'),
-        ('', 1),
-        ('enable', 1, 'b')),
-    'uart_config': packet('\x0D',
-        ('parity', 2, 'i'),
-        ('two_stop_bits', 1, 'b'),
-        ('speed4x', 1, 'b'),
-        ('', 2),
-        ('uart_num', 2, 'i'),
-        ('rate', 16, 'i')),
-    'uart_data': packet('\x0E',
-        ('size', 6, 'i'),
-        ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),
-    'set_pin_uart': packet('\x0F',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('uart_num', 2, 'i'),
-        ('', 4),
-        ('dir', 1, 'i'),
-        ('enable', 1, 'i')),
-    'spi_configure_master': packet('\x10',
-        ('div', 3, 'i'),
-        ('scale', 2, 'i'),
-        ('spi_num', 2, 'i'),
-        ('', 1),
-        ('clk_pol', 1, 'b'),
-        ('clk_edge', 1, 'b'),
-        ('smp_end', 1, 'b'),
-        ('', 5)),
-    'spi_master_request': packet('\x11',
-        ('ss_pin', 6, 'i'),
-        ('spi_num', 2, 'i'),
-        ('total_size', 6, 'i'),
-        ('res_size_neq_total', 1, 'b'),
-        ('data_size_neq_total', 1, 'b'),
-        ('data_size', 8, 'i'),
-        ('data', 'data_size', 'c')),
-    'set_pin_spi': packet('\x12',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('spi_num', 2, 'i'),
-        ('mode', 2, 'i'),
-        ('enable', 1, 'b'),
-        ('', 3)),
-    'i2c_configure_master': packet('\x13',
-        ('i2c_num', 2, 'i'),
-        ('', 3),
-        ('rate', 2, 'i'),
-        ('smbus_levels', 1, 'b')),
-    'i2c_write_read': packet('\x14',
-        ('i2c_num', 2, 'i'),
-        ('', 3),
-        ('ten_bit_addr', 1, 'b'),
-        ('addr_msb', 2, 'i'),
-        ('addr_lsb', 8, 'i'),
-        ('write_size', 8, 'i'),
-        ('read_size', 8, 'i'),
-        ('data', 'write_size', 'c')),
-    #'\x15': ''
-    'icsp_six': packet('\x16',
-        ('inst', 24, 'c')),
-    'icsp_regout': packet('\x17'),
-    'icsp_prog_enter': packet('\x18'),
-    'icsp_prog_exit': packet('\x19'),
-    # per the protocol only enable:1 is defined, i'm guessing the '':7
-    'icsp_config': packet('\x1A',
-        ('enable', 1, 'b'),
-        ('', 7)),
-    # incap = pulse_input
-    'incap_config': packet('\x1B',
-        ('incap_num', 4, 'i'),
-        ('', 4),
-        ('clock', 2, 'i'),
-        ('', 1),
-        ('mode', 3, 'i'),
-        ('', 1),
-        ('double_prec', 1, 'b')),
-    'set_pin_incap': packet('\x1C',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('incap_num', 4, 'i'),
-        ('', 3),
-        ('enable', 1, 'b')),
-    'soft_close': packet('\x1D'),
-}
+    def read(self, io):
+        k = io.read(1)
+        return self.mapping[k](io)
 
-command_chars = to_char_lookup(commands)
+    def establish_connection(self, io):
+        return  {'name': 'establish_connection',
+                'magic': io.read(4),
+                'hardware_version': io.read(8),
+                'board_version': io.read(8),
+                'firmware_version': io.read(8)}
 
-responses = {
-    'establish_connection': packet('\x00',
-        ('magic', 32, 'c'),
-        ('hardware_version', 64, 'c'),
-        ('board_version', 64, 'c'),
-        ('firmware_version', 64, 'c')),
-    'soft_reset': packet('\x01'),
-    'check_interface_response': packet('\x02',
-        ('supported', 1, 'b'),
-        ('', 7)),
-    #'\x03': ''
-    'report_digital_in_status': packet('\x04',
-        ('level', 1, 'b'),
-        ('', 1),
-        ('pin', 6, 'i')),
-    'report_periodic_digital_in_status': packet('\x05',
-        ('size', 8, 'i')),
-    'set_change_notify': packet('\x06',
-        ('cn', 1, 'b'),
-        ('', 1),
-        ('pin', 6, 'i')),
-    'register_periodic_digital_sampling': packet('\x07',
-        ('pin', 6, 'i'),
-        ('', 2),
-        ('freq_scale', 8, 'i')),
-    #'\x08': ''
-    #'\x09': ''
-    #'\x0A': ''
-    # NOTE report_analog_in_status will be modified during runtime
-    'report_analog_in_status': packet('\x0B'),
-    'report_analog_in_format': packet('\x0C',
-        ('num_pins', 8, 'i'),
-        ('pins', 'num_pins', 'i')),
-    'uart_status': packet('\x0D',
-        ('uart_num', 2, 'i'),
-        ('', 5),
-        ('enabled', 1, 'b')),
-    'uart_data': packet('\x0E',
-        ('size', 6, 'i'),
-        ('uart_num', 2, 'i'),
-        ('data', 'size', 'c')),
-    'uart_report_tx_status': packet('\x0F',
-        ('uart_num', 2, 'i'),
-        ('bytes_to_add', 14, 'i')),
-        #('data', 'bytes_to_add', 'c')),
-    'spi_status': packet('\x10',
-        ('spi_num', 2, 'i'),
-        ('', 5),
-        ('enabled', 1, 'b')),
-    'spi_data': packet('\x11',
-        ('size', 6, 'i'),
-        ('spi_num', 2, 'i'),
-        ('ss_pin', 6, 'i'),
-        ('', 2),
-        ('data', 'size', 'c')),
-    'spi_report_tx_status': packet('\x12',
-        ('spi_num', 2, 'i'),
-        ('bytes_to_add', 14, 'i')),
-        #('data', 'bytes_to_add', 'c')),
-    'i2c_status': packet('\x13',
-        ('i2c_num', 2, 'i'),
-        ('', 5),
-        ('enabled', 1, 'b')),
-    'i2c_result': packet('\x14',
-        ('i2c_num', 2, 'i'),
-        ('', 6),
-        ('size', 8, 'i')),
-    # NOTE bytes_to_add = N of additional bytes to read
-    'i2c_report_tx_status': packet('\x15',
-        ('i2c_num', 2, 'i'),
-        ('bytes_to_add', 14, 'i')),
-        #('data', 'bytes_to_add', 'c')),
-    # NOTE bytes_to_add = N of additional bytes to read
-    'icsp_report_rx_status': packet('\x16',
-        ('bytes_to_add', 16, 'i')),
-        #('data', 'bytes_to_add', 'c')),
-    'icsp_result': packet('\x17',
-        ('reg', 16, 'c')),
-    #'\x18': ''
-    #'\x19': ''
-    'icsp_config': packet('\x1A',
-        ('enable', 1, 'b'),
-        ('', 7)),
-    'incap_status': packet('\x1B',
-        ('incap_num', 4, 'i'),
-        ('', 3),
-        ('enabled', 1, 'b')),
-    'incap_report': packet('\x1C',
-        ('incap_num', 4, 'i'),
-        ('', 2),
-        ('size', 2, 'i'),
-        ('length', 'size', 'i')),
-    'soft_close': packet('\x1D'),
-}
+    def soft_reset(self, io):
+        return {'name': 'soft_reset'}
 
-response_chars = to_char_lookup(responses)
+    def check_interface_response(self, io):
+        return {'name': 'check_interface_response',
+                'supported': bool(0x01 & ord(io.read(1)))}
+
+    def report_digital_in_status(self, io):
+        b = io.read(1)
+        return {'name': 'report_digital_in_status',
+                'level': bool(0x01 & ord(b)),
+                'pin': (0xFC & ord(b))}
+
+    def report_periodic_digital_in_status(self, io):
+        return {'name': 'report_periodic_digital_in_status',
+                'size': ord(io.read(1))}
+
+    def set_change_notify(self, io):
+        b = io.read(1)
+        return {'name': 'set_change_notify',
+                'change': bool(0x01 & ord(b)),
+                'pin': (0xFC & ord(b))}
+
+    def register_periodic_digital_sampling(self, io):
+        return {'name': 'register_periodic_digital_sampling',
+                'pin': (0x3F & ord(io.read(1))),
+                'freq_scale': io.read(1)}
+
+    def report_analog_in_status(self, io):
+        if not hasattr(self, 'analog_pins'):
+            raise ValueError('missing analog_pins')
+        r = {'name': 'report_analog_in_status'}
+        for p in self.analog_pins:
+            header, high = io.read(2)
+            r[p] = ((header & 0x03) | (high << 2))
+        return r
+
+    def report_analog_in_format(self, io):
+        n = ord(io.read(1))
+        self.analog_pins = [ord(b) for b in io.read(n)]
+        return {'name': 'report_analog_in_format',
+                'num_pins': n,
+                'pins': self.analog_pins}
+
+    def uart_status(self, io):
+        b = io.read(1)
+        return {'name': 'uart_status',
+                'uart_num': (0x03 & ord(b)),
+                'enabled': (0x80 & ord(b))}
+
+    def uart_data(self, io):
+        b = io.read(1)
+        n = (0x3F & ord(b))
+        return {'name': 'uart_data',
+                'size': n,
+                'uart_num': (0xC0 & ord(b)),
+                'data': io.read(n)}
+
+    def uart_report_tx_status(self, io):
+        b0, b1 = io.read(2)
+        return {'name': 'uart_report_tx_status',
+                'uart_num': (0x03 & ord(b0)),
+                'bytes_to_add': ((ord(b0) >> 2) | (ord(b1) << 6))}
+
+    def spi_status(self, io):
+        b = io.read(1)
+        return {'name': 'spi_status',
+                'spi_num': (0x03 & ord(b)),
+                'enabled': (0x80 & ord(b))}
+
+    def spi_data(self, io):
+        b = io.read(1)
+        n = (0x3F & ord(b))
+        return {'name': 'spi_data',
+                'size': n,
+                'spi_num': (0xC0 & ord(b)),
+                'ss_pin': (0x3F & ord(io.read(1))),
+                'data': io.read(n)}
+
+    def spi_report_tx_status(self, io):
+        b0, b1 = io.read(2)
+        return {'name': 'spi_report_tx_status',
+                'spi_num': (0x03 & ord(b0)),
+                'bytes_to_add': ((ord(b0) >> 2) | (ord(b1) << 6))}
+
+    def twi_status(self, io):
+        b = io.read(1)
+        return {'name': 'twi_status',
+                'twi_num': (0x03 & ord(b)),
+                'enabled': (0x80 & ord(b))}
+
+    def twi_result(self, io):
+        b0, b1 = io.read(2)
+        n = ord(b1)
+        return {'name': 'twi_result',
+                'twi_num': (0x03 & ord(b0)),
+                'size': n,
+                'data': io.read(n)}
+
+    def twi_report_tx_status(self, io):
+        b0, b1 = io.read(2)
+        return {'name': 'twi_report_tx_status',
+                'twi_num': (0x03 & ord(b0)),
+                'bytes_to_add': ((ord(b0) >> 2) | (ord(b1) << 6))}
+
+    def icsp_report_tx_status(self, io):
+        return {'name': 'icsp_report_rx_status',
+                'bytes_to_add': struct.unpack('h', io.read(2))[0]}
+
+    def icsp_result(self, io):
+        return {'name': 'icsp_result',
+                'reg': io.read(2)}
+
+    def icsp_config(self, io):
+        return {'name': 'icsp_config',
+                'enable': (0x01 & ord(io.read(1)))}
+
+    def incap_status(self, io):
+        b = io.read(1)
+        return {'name': 'incap_status',
+                'incap_num': (0x0F & ord(b)),
+                'enabled': (0x80 & ord(b))}
+
+    def incap_report(self, io):
+        b = io.read(1)
+        n = (0xC0 & ord(b))
+        if n == 0:
+            n = 4
+        return {'name': 'incap_report',
+                'incap_num': (0x0F & ord(b)),
+                'size': n,
+                'length': io.read(n)}
+
+    def soft_close(self, io):
+        return {'name': 'soft_close'}
+
+class Version1Commands(object):
+    def write(self, interface, command, *args):
+        if not hasattr(self, command):
+            raise ValueError("Unknown command: %s" % command)
+        interface.write(getattr(self, command)(*args))
+
+    def hard_reset(self):
+        return '\x00IOIO'
+
+    def soft_reset(self):
+        return '\x01'
+
+    def check_interface(self, interface='IOIO0003'):
+        assert isinstance(interface, str)
+        assert len(interface) < 8
+        return '\x02' + interface
+
+    def set_pin_digital_out(self, pin, value=0, open_drain=1):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x03' + chr((pin << 2) | \
+                ((0x01 & bool(value)) << 1) | \
+                (0x01 & bool(open_drain)))
+
+    def set_digital_out_level(self, pin, value=0):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x04' + chr((pin << 2) | (0x01 & bool(value)))
+
+    def set_pin_digital_in(self, pin, pull):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x05' + chr((pin << 2) | (0x03 & pull))
+
+    def set_change_notify(self, pin, notify=True):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x06' + chr((pin << 2) | (0x01 & bool(notify)))
+
+    def register_periodic_digital_sampling(self, pin, freq_scale=0):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x07' + chr((pin << 2)) + chr(freq_scale)
+
+    def set_pin_pwm(self, pin, pwm_num, enable=True):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x08' + chr((pin << 2)) + chr((pwm_num << 4) | \
+                (0x01 & bool(enable)))
+
+    def set_pwm_duty_cycle(self, fraction, pwm_num, duty_cycle):
+        # TODO more argument checking
+        return '\x09' + chr((fraction << 6) | ((pwm_num & 0x0f) << 2)) + \
+                struct.pack('h', duty_cycle)
+
+    def set_pwm_period(self, scale, pwm_num, period):
+        # TODO more argument checking
+        sl = ((scale & 0x01) << 7)
+        sh = (scale & 0x02)
+        return '\x0A' + chr(sl | ((pwm_num & 0x0f) << 3) | sh) + \
+                struct.pack('h', period)
+
+    def set_pin_analog_in(self, pin):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x0B' + chr(pin)
+
+    def set_analog_in_sampling(self, pin, enable=True):
+        assert isinstance(pin, int)
+        # TODO more argument checking
+        return '\x0C' + chr((pin << 2) | (bool(enable) & 0x01))
+
+    def uart_config(self, uart_num, rate=9600, parity=0, two_stop_bits=0,
+            speed4x=0):
+        # TODO more argument checking
+        return '\x0D' + chr((parity << 6) | ((two_stop_bits & 0x01) << 5) | \
+                ((speed4x & 0x01) << 2) | (uart_num << 6)) + \
+                struct.pack('h', rate)
+
+    def uart_data(self, uart_num, data, size=None):
+        # TODO more argument checking
+        assert isinstance(uart_num, int)
+        assert isinstance(data, str)
+        size = len(data) if size is None else size
+        assert len(data) == size
+        return '\x0E' + chr((size << 2) | (uart_num & 0x03)) + data
+
+    def set_pin_uart(self, pin, uart_num, direction, enable=True):
+        # TODO more argument checking
+        return '\x0F' + chr((pin << 2)) + chr((uart_num << 6) | \
+                ((direction & 0x01) << 1) | (enable & 0x01))
+
+    def spi_configure_master(self):
+        """
+        'spi_configure_master': packet('\x10',
+            ('div', 3, 'i'),
+            ('scale', 2, 'i'),
+            ('spi_num', 2, 'i'),
+            ('', 1),
+            ('clk_pol', 1, 'b'),
+            ('clk_edge', 1, 'b'),
+            ('smp_end', 1, 'b'),
+            ('', 5)
+        """
+        raise NotImplementedError
+
+    def spi_master_request(self):
+        """
+        'spi_master_request': packet('\x11',
+            ('ss_pin', 6, 'i'),
+            ('spi_num', 2, 'i'),
+            ('total_size', 6, 'i'),
+            ('res_size_neq_total', 1, 'b'),
+            ('data_size_neq_total', 1, 'b'),
+            ('data_size', 8, 'i'),
+            ('data', 'data_size', 'c')),
+        """
+        raise NotImplementedError
+
+    def set_pin_spi(self):
+        """
+        'set_pin_spi': packet('\x12',
+            ('pin', 6, 'i'),
+            ('', 2),
+            ('spi_num', 2, 'i'),
+            ('mode', 2, 'i'),
+            ('enable', 1, 'b'),
+            ('', 3)),
+        """
+        raise NotImplementedError
+
+    def twi_configure_master(self):
+        """
+        'i2c_configure_master': packet('\x13',
+            ('i2c_num', 2, 'i'),
+            ('', 3),
+            ('rate', 2, 'i'),
+            ('smbus_levels', 1, 'b')),
+        """
+        raise NotImplementedError
+
+    def twi_write_read(self):
+        """
+        'i2c_write_read': packet('\x14',
+            ('i2c_num', 2, 'i'),
+            ('', 3),
+            ('ten_bit_addr', 1, 'b'),
+            ('addr_msb', 2, 'i'),
+            ('addr_lsb', 8, 'i'),
+            ('write_size', 8, 'i'),
+            ('read_size', 8, 'i'),
+            ('data', 'write_size', 'c')),
+        """
+        raise NotImplementedError
+
+    def icsp_six(self):
+        """
+        'icsp_six': packet('\x16',
+            ('inst', 24, 'c')),
+        """
+        raise NotImplementedError
+
+    def icsp_regout(self):
+        """
+        'icsp_regout': packet('\x17'),
+        """
+        raise NotImplementedError
+
+    def icsp_prog_enter(self):
+        """
+        'icsp_prog_enter': packet('\x18'),
+        """
+        raise NotImplementedError
+
+    def icsp_prog_exit(self):
+        """
+        'icsp_prog_exit': packet('\x19'),
+        """
+        raise NotImplementedError
+
+    def icsp_config(self):
+        """
+        'icsp_config': packet('\x1A',
+            ('enable', 1, 'b'),
+            ('', 7)),
+        """
+        raise NotImplementedError
+
+    def incap_config(self, incap_num, clock, mode, double):
+        # TODO more argument checking
+        return '\x1B' + chr((incap_num << 4) | ((clock & 0x03) << 1)) + \
+                chr((mode << 5) | (double & 0x01))
+
+    def set_pin_incap(self, pin, incap_num, enable=True):
+        # TODO more argument checking
+        return '\x1C' + chr((pin << 2)) + \
+                chr((incap_num << 4) | (enable & 0x01))
+
+    def soft_close(self):
+        return '\x1D'
 
 
 class Version1Protocol(Protocol):
     def __init__(self, connection_packet):
-        Protocol.__init__(self, commands, responses, default_kwargs)
+        Protocol.__init__(self, Version1Commands(), Version1Responses())
         self.connection_packet = connection_packet
-
-    def update_state(self, response):
-        if response['name'] == 'report_analog_in_format':
-            num_pins = response['num_pins']
-            if num_pins == 0:
-                return
-            # modify self._response_chars
-            pins = response['pins']
-            args = []
-            for pin in response[pins]:
-                h = '%s_h' % pin
-                l = '%s_l' % pin
-                # TODO figure out analog format packing
-                args.append((h, 8, 'i'))
-                args.append((l, 8, 'i'))
-
-            resp = self._response_chars['report_analog_in_status']
-            self._response_chars['report_analog_in_status'] = \
-                    packet(resp['char'], *args)

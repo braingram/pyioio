@@ -39,8 +39,20 @@ class IOIO(object):
         self.protocol.write_command(self.interface, name, **kwargs)
 
     # configuration functions
-    # update functions
     # control functions
+    # update functions
+    def update(self, max_reads=10):
+        r = 1
+        n = 0
+        while r != {}:
+            self.update_state(r)
+            if n > max_reads:
+                break
+            r = self.read()
+            n += 1
+
+    def update_state(self, response):
+        pass
 
 
 class ThreadedIOIO(IOIO):

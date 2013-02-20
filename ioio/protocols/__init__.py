@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-from . import utils
 from . import version1
 
 
@@ -9,9 +8,12 @@ def find(interface):
     """
     Find the correct protocol for this interface
     """
-    p = utils.read_response(interface, version1.response_chars)
-    assert p['name'] == 'establish_connection'
+    protocol = version1.Version1Protocol({})
+    packet = protocol.read(interface)
+    if packet['name'] != 'establish_connection':
+        raise ValueError("Invalid establish_connection packet: %s" % packet)
     # TODO check firmware/protocol version here
-    return version1.Version1Protocol(p)
+    protocol.connection_packet = packet
+    return protocol
 
 __all__ = ['find']
