@@ -13,6 +13,14 @@ from . import boards
 from . import interfaces
 from . import protocols
 
+pyopen = open
+
+
+def open(port, **kwargs):
+    interface = interfaces.find(port, **kwargs)
+    protocol = protocols.find(interface)
+    return boards.find(protocol)
+
 
 class IOIO(object):
     """
@@ -30,7 +38,8 @@ class IOIO(object):
         self.port = port
         self.interface = interfaces.find(port, **kwargs)
         self.protocol = protocols.find(self.interface)
-        self.board = boards.find(self.protocol)
+        #self.board = boards.find(self.protocol)
+        self.protocol.set_board(boards.find(self.protocol))
 
     def read(self):
         return self.protocol.read(self.interface)

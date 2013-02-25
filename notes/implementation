@@ -1,0 +1,19 @@
+Low level
+------
+
+an IOIO has 3 things
+    interface : hardware access
+    protocol : communication standard (and some state)
+    board : capabilities & state
+
+High level
+------
+
+configuration is:
+1) check that pin & module specs are valid
+2) assign pin to module
+3) configure module
+
+actions are:
+1) check configuration
+2) perform action

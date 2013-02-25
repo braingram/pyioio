@@ -46,6 +46,8 @@ class Version1Responses(object):
 
     def read(self, io):
         k = io.read(1)
+        if k == '':
+            return {}
         return self.mapping[k](io)
 
     def establish_connection(self, io):
@@ -193,10 +195,10 @@ class Version1Responses(object):
 
 
 class Version1Commands(object):
-    def write(self, interface, command, *args):
+    def write(self, interface, command, *args, **kwargs):
         if not hasattr(self, command):
             raise ValueError("Unknown command: %s" % command)
-        interface.write(getattr(self, command)(*args))
+        interface.write(getattr(self, command)(*args, **kwargs))
 
     def hard_reset(self):
         return '\x00IOIO'
@@ -395,6 +397,7 @@ class Version1Commands(object):
 
 
 class Version1Protocol(Protocol):
-    def __init__(self, connection_packet):
-        Protocol.__init__(self, Version1Commands(), Version1Responses())
+    def __init__(self, interface, connection_packet):
+        Protocol.__init__(self, interface, Version1Commands(), \
+                Version1Responses())
         self.connection_packet = connection_packet

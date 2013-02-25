@@ -1,0 +1,38 @@
+    in          out
+digital in
+            digital out
+analog in
+            pwm out
+pulse in
+uart        uart
+spi         spi
+twi         twi
+icsp        icsp
+
+
+uart, spi, twi, & icsp could be 'file-like'
+all inputs (digital, analog, pulse), callbacks & state
+outputs discrete (issue write = write)
+
+file-like
+------
+
+i.uart_read(0, nbytes)
+i.uart_write(0, data)
+i.uart_fp(0)  # return file-like object
+
+
+callbacks & state
+------
+
+i.digital_in(0, callback, cbargs, cbkwargs)
+i.digital_in(0)  # returns last value True/False
+i.analog_in(0, callback, cbargs, cbkwargs)
+i.analog_in(0)   # return last value <float>
+i.pulse_in(0, IncapModule, callback, cbargs, cbkwargs)
+
+outputs
+------
+
+i.digital_out(0, state)
+i.pwm_out(0, state)

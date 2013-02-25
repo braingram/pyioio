@@ -4,7 +4,7 @@ Hardware modules (for example: pwm, uart, etc...)
 """
 
 
-def make_set(items):
+def make_set(items, value=False):
     """
     items : (list, tuple, int, tuple of tuples, list of lists)
     """
@@ -16,77 +16,42 @@ def make_set(items):
         i = items[0]
         if isinstance(i, (tuple, list)):
             return dict([(tuple(k), False) for k in items])
-        return dict([(k, False) for k in items])
+        if callable(value):
+            f = value
+        else:
+            f = lambda: value
+        return dict([(k, f()) for k in items])
     raise ValueError("Invalid items %s" % items)
 
 
-class HWSet(object):
-    def __init__(self, items):
-        self.items = make_set(items)
-
-    def valid(self, i):
-        return i in self.items
-
-    def item(self, i, value=None):
-        if not self.valid(i):
-            raise ValueError("Invalid i[%s] not in %s" % \
-                (i, self.items))
-        if value is None:
-            return self.items[i]
-        if value not in (True, False):
-            raise ValueError("Invalid value %s" % value)
-        self.items[i] = value
-
-    def __len__(self):
-        return len(self.items)
-
-    def available(self, exclude=None):
-        """
-        get next available item or None if none are available
-        """
-        if exclude is None:
-            exclude = ()
-        for i in self.items:
-            if (not self.items[i]) and (i not in exclude):
-                return i
-        return None
-
-
-class PinSet(HWSet):
-    pull = {
-        'floating': 0,
-        'up': 1,
-        'down': 2,
-    }
-
+class HWModule(object):
     def __init__(self, pins):
-        HWSet.__init__(self, pins)
-
-    valid_pin = HWSet.valid
-    pin = HWSet.item
-    available_pin = HWSet.available
-
-
-class HWModule(HWSet):
-    def __init__(self, pins, indices=None):
-        if indices is None:
-            indices = range(len(pins))
-        HWSet.__init__(self, indices)
-        self.pins = PinSet(pins)
-        # settings for each item
-        self.settings = {}
+        self.valid_pins = make_set(pins)
 
     def valid_pin(self, i):
-        return self.pins.valid(i)
+        return i in self.valid_pins
 
-    def pin(self, i, value=None):
-        return self.pins.item(i, value)
+    def check_pin(self, i):
+        if not self.valid_pin(self, i):
+            raise ValueError("Invalid pin %i for %s" % (i, self))
 
-    def available_pin(self, exclude=None):
-        return self.pins.available(exclude)
+    def set_pin(self, ioio, i, *args, **kwargs):
+        self.check_pin(i)
 
 
-class PWM(HWModule):
+class HWWithSubmodules(HWModule):
+    def __init__(self, pins, subs=None):
+        HWModule.__init__(self, pins)
+        if subs is None:
+            subs = len(pins)
+        self.subs = make_set(subs, dict)
+
+
+class Analog(HWModule):
+    pass
+
+
+class PWM(HWWithSubmodules):
     clock = 16000000
     scales = [1, 8, 64, 256]
     sclae_encodings = {
@@ -98,16 +63,16 @@ class PWM(HWModule):
     max_period = 65536
 
 
-class UART(HWModule):
+class UART(HWWithSubmodules):
     pass
 
 
-class SPI(HWModule):
+class SPI(HWWithSubmodules):
     # TODO
     pass
 
 
-class Incap(HWModule):
+class Incap(HWWithSubmodules):
     clock = {
         '16MHz': 0,
         '2MHz': 1,
@@ -123,19 +88,19 @@ class Incap(HWModule):
     }
 
 
-class IncapDouble(HWModule):
+class PulseDouble(HWWithSubmodules):
     double = True
 
 
-class IncapSingle(HWModule):
+class PulseSingle(HWWithSubmodules):
     double = False
 
 
-class TWI(HWModule):
+class TWI(HWWithSubmodules):
     # TODO
     pass
 
 
-class ICSP(HWModule):
+class ICSP(HWWithSubmodules):
     # TODO
     pass

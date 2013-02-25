@@ -1,0 +1,40 @@
+Board state consists of
+- pins
+- modules
+
+
+Pins
+------
+
+self.pin[0] = self.p_in
+self.pin[1] = self.p_out
+self.pin[2] = self.analog
+self.pin[3] = self.pwm
+
+self.pin[0] = HWModule()
+self.pin[0] = i.PIN
+self.pin[1] = i.POUT
+self.pin[2] = i.ANALOG
+self.pin[3] = i.PWM(*args, **kwargs)
+p = i.PWM(*args, **kwargs)
+self.pin[4] = p
+self.pin[5] = i.FREE
+self.pin[6] = i.UART(*args, **kwargs)
+
+
+Modules
+------
+
+self.modules[<type>][0] = HWModule(pins)
+
+
+HWModule
+------
+Hardware modules can be made with either pins & config like so:
+
+PWMModule(1, freq, duty_cycle)
+
+or with just config and then assigned to pins
+
+m = PWMModule(freq, duty_cycle)
+self.pin[1] = m
