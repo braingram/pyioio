@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-from . import hwmodules
 from . import versions
 
 
 def find(protocol):
     if not hasattr(protocol, 'connection_packet'):
-        raise ValueError('Invalid protocol, missing connection_packet: %s' \
-            % protocol)
+        raise ValueError('Invalid protocol, missing connection_packet: %s'
+                         % protocol)
     p = protocol.connection_packet
     v = p['hardware_version']
     if v == 'SPRK0020':

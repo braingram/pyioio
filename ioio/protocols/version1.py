@@ -14,35 +14,35 @@ class Version1Responses(object):
     """
     def __init__(self):
         self.mapping = {
-                '\x00': self.establish_connection,
-                '\x01': self.soft_reset,
-                '\x02': self.check_interface_response,
-                #'\x03':
-                '\x04': self.report_digital_in_status,
-                '\x05': self.report_periodic_digital_in_status,
-                '\x06': self.set_change_notify,
-                '\x07': self.register_periodic_digital_sampling,
-                #'\x08' ... '\x0A'
-                '\x0B': self.report_analog_in_status,
-                '\x0C': self.report_analog_in_format,
-                '\x0D': self.uart_status,
-                '\x0E': self.uart_data,
-                '\x0F': self.uart_report_tx_status,
-                '\x10': self.spi_status,
-                '\x11': self.spi_data,
-                '\x12': self.spi_report_tx_status,
-                '\x13': self.twi_status,
-                '\x14': self.twi_result,
-                '\x15': self.twi_report_tx_status,
-                '\x16': self.icsp_report_rx_status,
-                '\x17': self.icsp_result,
-                #'\x18':
-                #'\x19':
-                '\x1A': self.icsp_config,
-                '\x1B': self.incap_status,
-                '\x1C': self.incap_report,
-                '\x1D': self.soft_close,
-                }
+            '\x00': self.establish_connection,
+            '\x01': self.soft_reset,
+            '\x02': self.check_interface_response,
+            #'\x03':
+            '\x04': self.report_digital_in_status,
+            '\x05': self.report_periodic_digital_in_status,
+            '\x06': self.set_change_notify,
+            '\x07': self.register_periodic_digital_sampling,
+            #'\x08' ... '\x0A'
+            '\x0B': self.report_analog_in_status,
+            '\x0C': self.report_analog_in_format,
+            '\x0D': self.uart_status,
+            '\x0E': self.uart_data,
+            '\x0F': self.uart_report_tx_status,
+            '\x10': self.spi_status,
+            '\x11': self.spi_data,
+            '\x12': self.spi_report_tx_status,
+            '\x13': self.twi_status,
+            '\x14': self.twi_result,
+            '\x15': self.twi_report_tx_status,
+            '\x16': self.icsp_report_rx_status,
+            '\x17': self.icsp_result,
+            #'\x18':
+            #'\x19':
+            '\x1A': self.icsp_config,
+            '\x1B': self.incap_status,
+            '\x1C': self.incap_report,
+            '\x1D': self.soft_close,
+        }
 
     def read(self, io):
         k = io.read(1)
@@ -51,7 +51,7 @@ class Version1Responses(object):
         return self.mapping[k](io)
 
     def establish_connection(self, io):
-        return  {'name': 'establish_connection',
+        return {'name': 'establish_connection',
                 'magic': io.read(4),
                 'hardware_version': io.read(8),
                 'board_version': io.read(8),
@@ -68,7 +68,7 @@ class Version1Responses(object):
         b = io.read(1)
         return {'name': 'report_digital_in_status',
                 'level': bool(0x01 & ord(b)),
-                'pin': (0xFC & ord(b))}
+                'pin': (ord(b) >> 2)}
 
     def report_periodic_digital_in_status(self, io):
         return {'name': 'report_periodic_digital_in_status',
@@ -78,7 +78,7 @@ class Version1Responses(object):
         b = io.read(1)
         return {'name': 'set_change_notify',
                 'change': bool(0x01 & ord(b)),
-                'pin': (0xFC & ord(b))}
+                'pin': (ord(b) >> 2)}
 
     def register_periodic_digital_sampling(self, io):
         return {'name': 'register_periodic_digital_sampling',
@@ -112,7 +112,8 @@ class Version1Responses(object):
         n = (0x3F & ord(b))
         return {'name': 'uart_data',
                 'size': n,
-                'uart_num': (0xC0 & ord(b)),
+                # TODO double check this
+                'uart_num': (ord(b) >> 6),
                 'data': io.read(n)}
 
     def uart_report_tx_status(self, io):
@@ -132,7 +133,7 @@ class Version1Responses(object):
         n = (0x3F & ord(b))
         return {'name': 'spi_data',
                 'size': n,
-                'spi_num': (0xC0 & ord(b)),
+                'spi_num': (ord(b) >> 6),
                 'ss_pin': (0x3F & ord(io.read(1))),
                 'data': io.read(n)}
 
@@ -182,7 +183,7 @@ class Version1Responses(object):
 
     def incap_report(self, io):
         b = io.read(1)
-        n = (0xC0 & ord(b))
+        n = (ord(b) >> 6)
         if n == 0:
             n = 4
         return {'name': 'incap_report',
@@ -195,6 +196,34 @@ class Version1Responses(object):
 
 
 class Version1Commands(object):
+    pull_states = {
+        'floating': 0,
+        'up': 1,
+        'down': 2,
+    }
+
+    scale_codes = {
+        '1': 0,
+        '8': 3,
+        '64': 2,
+        '256': 1,
+    }
+
+    pulse_clocks = {
+        '16MHz': 0,
+        '2MHz': 1,
+        '250kHz': 2,
+        '62.5khz': 3,
+    }
+
+    pulse_modes = {
+        'positive': 0,
+        'negative': 1,
+        'frequency': 2,
+        'frequency4x': 3,
+        'frequency16x': 4,
+    }
+
     def write(self, interface, command, *args, **kwargs):
         if not hasattr(self, command):
             raise ValueError("Unknown command: %s" % command)
@@ -213,68 +242,68 @@ class Version1Commands(object):
 
     def set_pin_digital_out(self, pin, value=0, open_drain=1):
         assert isinstance(pin, int)
-        # TODO more argument checking
-        return '\x03' + chr((pin << 2) | \
-                ((0x01 & bool(value)) << 1) | \
-                (0x01 & bool(open_drain)))
+        return '\x03' + chr((pin << 2) |
+                            ((0x01 & bool(value)) << 1) |
+                            (0x01 & bool(open_drain)))
 
     def set_digital_out_level(self, pin, value=0):
         assert isinstance(pin, int)
-        # TODO more argument checking
         return '\x04' + chr((pin << 2) | (0x01 & bool(value)))
 
     def set_pin_digital_in(self, pin, pull):
         assert isinstance(pin, int)
-        # TODO more argument checking
+        if isinstance(pull, (str, unicode)):
+            if pull not in self.pull_states:
+                raise ValueError("Unknown pull: %s not in %s" %
+                                 (pull, self.pull_states))
+            pull = self.pull_states[pull]
         return '\x05' + chr((pin << 2) | (0x03 & pull))
 
     def set_change_notify(self, pin, notify=True):
         assert isinstance(pin, int)
-        # TODO more argument checking
         return '\x06' + chr((pin << 2) | (0x01 & bool(notify)))
 
     def register_periodic_digital_sampling(self, pin, freq_scale=0):
         assert isinstance(pin, int)
-        # TODO more argument checking
+        # TODO check/parse freq_scale
         return '\x07' + chr((pin << 2)) + chr(freq_scale)
 
     def set_pin_pwm(self, pin, pwm_num, enable=True):
         assert isinstance(pin, int)
-        # TODO more argument checking
-        return '\x08' + chr((pin << 2)) + chr((pwm_num << 4) | \
-                (0x01 & bool(enable)))
+        return '\x08' + chr((pin << 2)) + \
+            chr((pwm_num << 4) | (0x01 & bool(enable)))
 
     def set_pwm_duty_cycle(self, fraction, pwm_num, duty_cycle):
-        # TODO more argument checking
         return '\x09' + chr((fraction << 6) | ((pwm_num & 0x0f) << 2)) + \
-                struct.pack('h', duty_cycle)
+            struct.pack('h', duty_cycle)
 
     def set_pwm_period(self, scale, pwm_num, period):
-        # TODO more argument checking
+        if isinstance(scale, (str, unicode)):
+            if scale not in self.scale_codes:
+                raise ValueError("Unknown scale: %s not in %s" %
+                                 (scale, self.scale_codes))
+            scale = self.scale_codes[scale]
         sl = ((scale & 0x01) << 7)
         sh = (scale & 0x02)
         return '\x0A' + chr(sl | ((pwm_num & 0x0f) << 3) | sh) + \
-                struct.pack('h', period)
+            struct.pack('h', period)
 
     def set_pin_analog_in(self, pin):
         assert isinstance(pin, int)
-        # TODO more argument checking
         return '\x0B' + chr(pin)
 
     def set_analog_in_sampling(self, pin, enable=True):
         assert isinstance(pin, int)
-        # TODO more argument checking
         return '\x0C' + chr((pin << 2) | (bool(enable) & 0x01))
 
     def uart_config(self, uart_num, rate=9600, parity=0, two_stop_bits=0,
-            speed4x=0):
-        # TODO more argument checking
-        return '\x0D' + chr((parity << 6) | ((two_stop_bits & 0x01) << 5) | \
+                    speed4x=0):
+        return '\x0D' + \
+            chr((parity << 6) | ((two_stop_bits & 0x01) << 5) |
                 ((speed4x & 0x01) << 2) | (uart_num << 6)) + \
-                struct.pack('h', rate)
+            struct.pack('h', rate)
 
     def uart_data(self, uart_num, data, size=None):
-        # TODO more argument checking
         assert isinstance(uart_num, int)
         assert isinstance(data, str)
         size = len(data) if size is None else size
@@ -282,8 +311,8 @@ class Version1Commands(object):
         return '\x0E' + chr((size << 2) | (uart_num & 0x03)) + data
 
     def set_pin_uart(self, pin, uart_num, direction, enable=True):
-        # TODO more argument checking
-        return '\x0F' + chr((pin << 2)) + chr((uart_num << 6) | \
+        return '\x0F' + chr((pin << 2)) + \
+            chr((uart_num << 6) |
                 ((direction & 0x01) << 1) | (enable & 0x01))
 
     def spi_configure_master(self):
@@ -383,14 +412,22 @@ class Version1Commands(object):
         raise NotImplementedError
 
     def incap_config(self, incap_num, clock, mode, double):
-        # TODO more argument checking
+        if isinstance(clock, (str, unicode)):
+            if clock not in self.pulse_clocks:
+                raise ValueError("Unknown clock [%s] not in %s" %
+                                 (clock, self.pulse_clocks))
+            clock = self.pulse_clocks[clock]
+        if isinstance(mode, (str, unicode)):
+            if mode not in self.pulse_modes:
+                raise ValueError("Unknown mode [%s] not in %s" %
+                                 (mode, self.pulse_modes))
+            mode = self.pulse_modes
         return '\x1B' + chr((incap_num << 4) | ((clock & 0x03) << 1)) + \
-                chr((mode << 5) | (double & 0x01))
+            chr((mode << 5) | (double & 0x01))
 
     def set_pin_incap(self, pin, incap_num, enable=True):
-        # TODO more argument checking
         return '\x1C' + chr((pin << 2)) + \
-                chr((incap_num << 4) | (enable & 0x01))
+            chr((incap_num << 4) | (enable & 0x01))
 
     def soft_close(self):
         return '\x1D'
@@ -398,6 +435,6 @@ class Version1Commands(object):
 
 class Version1Protocol(Protocol):
     def __init__(self, interface, connection_packet):
-        Protocol.__init__(self, interface, Version1Commands(), \
-                Version1Responses())
+        Protocol.__init__(self, interface, Version1Commands(),
+                          Version1Responses())
         self.connection_packet = connection_packet
