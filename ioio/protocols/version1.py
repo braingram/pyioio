@@ -114,7 +114,7 @@ class Version1Responses(object):
                 'size': n,
                 # TODO double check this
                 'uart_num': (ord(b) >> 6),
-                'data': io.read(n)}
+                'data': io.read(n + 1)[:-1]}
 
     def uart_report_tx_status(self, io):
         b0, b1 = io.read(2)
@@ -224,6 +224,11 @@ class Version1Commands(object):
         'frequency16x': 4,
     }
 
+    uart_directions = {
+        'rx': 0,
+        'tx': 1,
+    }
+
     def write(self, interface, command, *args, **kwargs):
         if not hasattr(self, command):
             raise ValueError("Unknown command: %s" % command)
@@ -296,12 +301,12 @@ class Version1Commands(object):
         assert isinstance(pin, int)
         return '\x0C' + chr((pin << 2) | (bool(enable) & 0x01))
 
-    def uart_config(self, uart_num, rate=9600, parity=0, two_stop_bits=0,
+    def uart_config(self, uart_num, baud=9600, parity=0, two_stop_bits=0,
                     speed4x=0):
         return '\x0D' + \
             chr((parity << 6) | ((two_stop_bits & 0x01) << 5) |
                 ((speed4x & 0x01) << 2) | (uart_num << 6)) + \
-            struct.pack('h', rate)
+            struct.pack('h', baud)
 
     def uart_data(self, uart_num, data, size=None):
         assert isinstance(uart_num, int)
@@ -311,6 +316,11 @@ class Version1Commands(object):
         return '\x0E' + chr((size << 2) | (uart_num & 0x03)) + data
 
     def set_pin_uart(self, pin, uart_num, direction, enable=True):
+        if isinstance(direction, (str, unicode)):
+            if direction not in self.uart_directions:
+                raise ValueError("Unknown direction: %s not in %s" %
+                                 (direction, self.uart_directions))
+            direction = self.uart_directions[direction]
         return '\x0F' + chr((pin << 2)) + \
             chr((uart_num << 6) |
                 ((direction & 0x01) << 1) | (enable & 0x01))
