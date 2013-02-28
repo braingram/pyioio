@@ -6,8 +6,9 @@ def shadow(a, b, overwrite=False, skip_private=True):
         if skip_private and attr[0] == '_':
             continue
         if hasattr(b, attr) and (not overwrite):
-            raise AttributeError("shadowing %s with %s will overwrite %s" % \
-                    (a, b, attr))
+            raise AttributeError("shadowing %s with %s will overwrite %s" %
+                                 (a, b, attr))
         setattr(b, attr, getattr(a, attr))
+
 
 __all__ = ['shadow']

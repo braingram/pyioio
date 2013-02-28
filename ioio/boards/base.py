@@ -29,11 +29,16 @@ class Board(object):
                                                    incap_singles)
         self.modules.twi = hw.TWI(twi_pins)
 
-        # TODO icsp
-        #self.icsp = hwmodules.ICSP(icsp_pins)
+        self.modules.icsp = hw.ICSP(icsp_pins)
+
+    def reset_state(self):
+        self.pins = dict([(i, None) for i in xrange(len(self.pins))])
+        for sm in ('analog', 'pwm', 'uart', 'spi', 'pulse_double',
+                   'pulse_single', 'twi', 'icsp'):
+            getattr(self.modules, sm).reset()
 
     def soft_reset(self):
-        # TODO reset all state
+        self.reset_state()
         self.write_command('soft_reset')
 
     def check_pin(self, pin, function, throw=True):
@@ -126,7 +131,7 @@ class Board(object):
         self.write_command('set_pwm_duty_cycle', f, sindex, pw)
 
     def pulse_in(self, pin, clock=None, mode=None,
-                 pull='up', double=False, sindex=None):
+                 pull=None, double=False, sindex=None):
         if double:
             hwm = self.modules.pulse_double
         else:
@@ -137,22 +142,36 @@ class Board(object):
         if status == 1:  # previously unassigned
             if sindex is None:
                 sindex = hwm.get_unused_submodule()
+            sm = hwm.find_submodule(sindex)
+            if pull is None:
+                pull = sm.pull
             self.write_command('set_pin_digital_in', pin, pull)
             self.assign_pin(pin, 'pulse_in')
         elif status == 2:  # already a pwm pin
             if sindex is None:
                 sindex = hwm.get_submodule_for_pin(pin)
                 assert sindex is not None
+            sm = hwm.find_submodule(sindex)
         else:
             raise ValueError("Unknown pin status %s for %s" %
                              (status, pin))
+
+        assert sm.double == double
+
+        if (pull is not None) and (sm.pull != pull) and (status == 2):
+            self.write_command('set_pin_digital_in', pin, pull)
+            sm.pull = pull
 
         hwm.assign_pin(pin, sindex)
         self.write_command('set_pin_incap', pin, sindex)
 
         # this function might be called with pin & sindex just to change index
-        if (clock is not None) and (mode is not None):
-            self.write_command('incap_config', sindex, clock, mode, double)
+        if (clock is None) and (mode is None):
+            return
+
+        clock = sm.clock if clock is None else clock
+        mode = sm.mode if mode is None else mode
+        self.write_command('incap_config', sindex, clock, mode, double)
 
     def uart(self, **kwargs):
         """

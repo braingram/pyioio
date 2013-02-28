@@ -19,17 +19,18 @@ def make_set(items, value=False):
             return {}
         i = items[0]
         if isinstance(i, (tuple, list)):
-            return dict([(tuple(k), False) for k in items])
+            return dict([(tuple(k), f()) for k in items])
         return dict([(k, f()) for k in items])
     raise ValueError("Invalid items %s" % items)
 
 
 class HWModule(object):
     def __init__(self, pins, value=False):
+        self.initial_value = value
         self.pins = make_set(pins, value)
 
-    def free_pin(self, pin, free_value=None):
-        self.pins[pin] = free_value
+    def free_pin(self, pin):
+        self.pins[pin] = self.initial_value
 
     def valid_pin(self, i):
         return i in self.pins
@@ -40,6 +41,10 @@ class HWModule(object):
 
     def assign_pin(self, pin, value=True):
         self.pins[pin] = value
+
+    def reset(self):
+        for pin in self.pins:
+            self.free_pin(pin)
 
 
 class HWWithSubmodules(HWModule):
@@ -77,3 +82,15 @@ class HWWithSubmodules(HWModule):
         if isinstance(index, self._subclass):
             index = self.find_submodule(self, index)
         self.pins[pin] = index
+
+    def reset(self):
+        HWModule.reset(self)
+        for s in self.subs:
+            sm = self.subs[s]
+            if isinstance(sm, dict):
+                sm = {}
+            elif hasattr(sm, 'reset'):
+                sm.reset()
+            else:
+                raise ValueError("Cannot reset submodule %s of %s" %
+                                 (sm, self))

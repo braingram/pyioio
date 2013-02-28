@@ -3,8 +3,11 @@
 from base import HWWithSubmodules
 
 
-class UARTSubModule(object):
+class UARTSubmodule(object):
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.baud = 9600
         self.parity = 0
         self.two_stop_bits = 0
@@ -34,4 +37,4 @@ class UARTSubModule(object):
 
 class UART(HWWithSubmodules):
     def __init__(self, pins, subs=None):
-        HWWithSubmodules.__init__(self, pins, subs, UARTSubModule)
+        HWWithSubmodules.__init__(self, pins, subs, UARTSubmodule)

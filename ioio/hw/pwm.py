@@ -24,12 +24,15 @@ def duty_cycle_in_clocks(period, duty_cycle):
     return pw, fraction
 
 
-class PWMSubModule(object):
+class PWMSubmodule(object):
     clock = 16000000
     scales = [1, 8, 64, 256]
     max_period = 65536
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.set_frequency(100)
 
     def get_frequency(self):
@@ -53,4 +56,4 @@ class PWMSubModule(object):
 
 class PWM(HWWithSubmodules):
     def __init__(self, pins, subs=None):
-        HWWithSubmodules.__init__(self, pins, subs, PWMSubModule)
+        HWWithSubmodules.__init__(self, pins, subs, PWMSubmodule)
