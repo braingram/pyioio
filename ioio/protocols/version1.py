@@ -179,7 +179,7 @@ class Version1Responses(object):
         b = io.read(1)
         return {'name': 'incap_status',
                 'incap_num': (0x0F & ord(b)),
-                'enabled': (0x80 & ord(b))}
+                'enabled': bool((0x80 & ord(b)))}
 
     def incap_report(self, io):
         b = io.read(1)
@@ -299,7 +299,7 @@ class Version1Commands(object):
 
     def set_analog_in_sampling(self, pin, enable=True):
         assert isinstance(pin, int)
-        return '\x0C' + chr((int(bool(enable)) << 7) | (0x3F & pin))
+        return '\x0C' + chr(((0x01 & enable) << 7) | (0x3F & pin))
 
     def uart_config(self, uart_num, baud=9600, parity=0, two_stop_bits=0,
                     speed4x=0):
@@ -431,13 +431,13 @@ class Version1Commands(object):
             if mode not in self.pulse_modes:
                 raise ValueError("Unknown mode [%s] not in %s" %
                                  (mode, self.pulse_modes))
-            mode = self.pulse_modes
-        return '\x1B' + chr((incap_num << 4) | ((clock & 0x03) << 1)) + \
-            chr((mode << 5) | (double & 0x01))
+            mode = self.pulse_modes[mode]
+        return '\x1B' + chr(incap_num) + \
+            chr(((0x01 & double) << 7) | (mode << 3) | clock)
 
     def set_pin_incap(self, pin, incap_num, enable=True):
-        return '\x1C' + chr((pin << 2)) + \
-            chr((incap_num << 4) | (enable & 0x01))
+        return '\x1C' + chr(pin) + \
+            chr(((0x01 & enable) << 7) | incap_num)
 
     def soft_close(self):
         return '\x1D'

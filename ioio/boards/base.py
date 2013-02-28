@@ -60,12 +60,12 @@ class Board(object):
     def assign_pin(self, pin, function):
         self.pins[pin] = function
 
-    def digital_in(self, pin, state='up', notify=True, callback=None):
+    def digital_in(self, pin, pull='up', notify=True, callback=None):
         """
-        state can be 'floating', 'up', 'down', or 0, 1, 2
+        pull can be 'floating', 'up', 'down', or 0, 1, 2
         """
         self.check_pin(pin, 'digital_in')
-        self.write_command('set_pin_digital_in', pin, state)
+        self.write_command('set_pin_digital_in', pin, pull)
         self.write_command('set_change_notify', pin, notify)
         self.assign_pin(pin, 'digital_in')
         # TODO register callback
@@ -126,7 +126,7 @@ class Board(object):
         self.write_command('set_pwm_duty_cycle', f, sindex, pw)
 
     def pulse_in(self, pin, clock=None, mode=None,
-                 state='up', double=False, sindex=None):
+                 pull='up', double=False, sindex=None):
         if double:
             hwm = self.modules.pulse_double
         else:
@@ -137,7 +137,7 @@ class Board(object):
         if status == 1:  # previously unassigned
             if sindex is None:
                 sindex = hwm.get_unused_submodule()
-            self.write_command('set_pin_digital_in', pin, state)
+            self.write_command('set_pin_digital_in', pin, pull)
             self.assign_pin(pin, 'pulse_in')
         elif status == 2:  # already a pwm pin
             if sindex is None:
@@ -157,7 +157,7 @@ class Board(object):
     def uart(self, **kwargs):
         """
         rx_pin : int or None
-        rx_pin_statestate : 'floating', 'up', 'down'
+        rx_pin_pull : 'floating', 'up', 'down'
         tx_pin : int or None
         tx_pin_open_drain : True/False
         sindex : int or None
@@ -166,7 +166,7 @@ class Board(object):
         """
         rx_pin = kwargs.get('rx_pin', None)
         tx_pin = kwargs.get('tx_pin', None)
-        rx_pin_state = kwargs.get('rx_pin_state', 'up')
+        rx_pin_pull = kwargs.get('rx_pin_pull', 'up')
         tx_pin_open_drain = kwargs.get('tx_pin_open_drain', False)
         assert not((rx_pin is None) and (tx_pin is None))
         status = self.check_pin(rx_pin, 'uart')
@@ -177,7 +177,7 @@ class Board(object):
             if sindex is None:
                 sindex = self.modules.uart.get_unused_submodule()
             if rx_pin is not None:
-                self.write_command('set_pin_digital_in', rx_pin, rx_pin_state)
+                self.write_command('set_pin_digital_in', rx_pin, rx_pin_pull)
                 self.write_command('set_pin_uart', rx_pin, sindex, 'rx')
                 self.assign_pin(rx_pin, 'uart')
                 self.modules.uart.assign_pin(rx_pin, sindex)
@@ -212,7 +212,8 @@ class Board(object):
         submodule = self.modules.uart.find_submodule(sindex)
         if submodule.check_config(cfg):
             submodule.set_config(cfg)
-            self.write_command('uart_config', sindex, **submodule.get_config())
+            kwargs = submodule.get_config()
+            self.write_command('uart_config', sindex, **kwargs)
 
         if 'data' in kwargs:
             self.write_command('uart_data', sindex, kwargs['data'])
