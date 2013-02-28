@@ -91,7 +91,7 @@ class Version1Responses(object):
         r = {'name': 'report_analog_in_status'}
         for p in self.analog_pins:
             header, high = io.read(2)
-            r[p] = ((header & 0x03) | (high << 2))
+            r[p] = ((ord(header) & 0x03) | (ord(high) << 2))
         return r
 
     def report_analog_in_format(self, io):
@@ -299,7 +299,7 @@ class Version1Commands(object):
 
     def set_analog_in_sampling(self, pin, enable=True):
         assert isinstance(pin, int)
-        return '\x0C' + chr((pin << 2) | (bool(enable) & 0x01))
+        return '\x0C' + chr((int(bool(enable)) << 7) | (0x3F & pin))
 
     def uart_config(self, uart_num, baud=9600, parity=0, two_stop_bits=0,
                     speed4x=0):

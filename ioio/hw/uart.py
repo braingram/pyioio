@@ -26,7 +26,7 @@ class UARTSubModule(object):
             if not hasattr(self, k):
                 raise ValueError("Inalid config key [%s]" % k)
             setattr(self, k, config[k])
-    
+
     def get_config(self):
         return dict([(k, getattr(self, k)) for k in
                      ('baud', 'parity', 'two_stop_bits', 'speed4x')])

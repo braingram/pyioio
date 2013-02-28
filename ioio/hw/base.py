@@ -32,11 +32,14 @@ class HWModule(object):
         self.pins[pin] = free_value
 
     def valid_pin(self, i):
-        return i in self._pins
+        return i in self.pins
 
     def check_pin(self, i):
-        if not self.valid_pin(self, i):
+        if not self.valid_pin(i):
             raise ValueError("Invalid pin %i for %s" % (i, self))
+
+    def assign_pin(self, pin, value=True):
+        self.pins[pin] = value
 
 
 class HWWithSubmodules(HWModule):

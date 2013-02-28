@@ -33,7 +33,8 @@ class Board(object):
         #self.icsp = hwmodules.ICSP(icsp_pins)
 
     def soft_reset(self):
-        raise NotImplementedError
+        # TODO reset all state
+        self.write_command('soft_reset')
 
     def check_pin(self, pin, function, throw=True):
         if self.pins[pin] is None:
@@ -77,11 +78,12 @@ class Board(object):
         self.write_command('set_digital_out_level', pin, level)
 
     def analog_in(self, pin, enable=True, callback=None):
-        self.check_pin(pin, 'analog')
+        self.check_pin(pin, 'analog_in')
         self.modules.analog.check_pin(pin)
         self.write_command('set_pin_analog_in', pin)
         self.write_command('set_analog_in_sampling', pin, enable)
-        self.assign_pin(pin, 'analog')
+        self.assign_pin(pin, 'analog_in')
+        self.modules.analog.assign_pin(pin)
         # TODO register callback
 
     def pwm(self, pin, duty=None, freq=None, sindex=None, open_drain=False):
