@@ -6,7 +6,7 @@ Basic Usage
 ------
 
 import ioio
-i = ioio.IOIO('/dev/ttyACM0')
+i = ioio.open('/dev/ttyACM0')
 
 
 Module layout:
@@ -31,9 +31,6 @@ Module layout:
 
 TODO
 ------
-
-Constants (pull [floating/low/high], etc...) where do they go?
-State (where should it go?)
 
 IOIO Functions
 - Digital I/O
