@@ -13,6 +13,7 @@ class PulseDoubleSubmodule(object):
         self.clock = '250kHz'
         self.mode = 'negative'
         self.pull = 'up'
+        self.value = 0
 
 
 class PulseSingleSubmodule(PulseDoubleSubmodule):

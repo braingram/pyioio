@@ -4,16 +4,31 @@ from .. import utils
 from .. import hw
 
 
+class Pin(object):
+    def __init__(self, state=None, value=None):
+        self.state = state
+        self.value = value
+
+    def free(self):
+        self.state = None
+        self.value = None
+
+
 class Modules(object):
     pass
 
 
-class Board(object):
+class Board(utils.Callbacker):
     def __init__(self, protocol, n_pins, pins, n_pwms, n_uarts, n_spis,
                  incap_doubles, incap_singles, twi_pins, icsp_pins):
+        utils.Callbacker.__init__(self, lambda e: e['name'])
         utils.shadow(protocol, self)
 
-        self.pins = dict([(i, None) for i in xrange(n_pins)])
+        #self.pins = dict([(i, None) for i in xrange(n_pins)])
+        self.pins = dict([(i, Pin()) for i in xrange(n_pins)])
+        # analog_ins
+        # digital_ins
+        # pulse_ins
         self.modules = Modules()
 
         # singles
@@ -21,18 +36,67 @@ class Board(object):
 
         # multiples
         self.modules.pwm = hw.PWM(pins['p_out'], n_pwms)
-        self.modules.uart = hw.UART(pins['p_out'], n_uarts)
-        self.modules.spi = hw.SPI(pins['p_out'], n_spis)
         self.modules.pulse_double = hw.PulseDouble(pins['p_in'],
                                                    incap_doubles)
         self.modules.pulse_single = hw.PulseSingle(pins['p_in'],
                                                    incap_singles)
+        self.modules.uart = hw.UART(pins['p_out'], n_uarts)
+        self.modules.spi = hw.SPI(pins['p_out'], n_spis)
         self.modules.twi = hw.TWI(twi_pins)
 
         self.modules.icsp = hw.ICSP(icsp_pins)
 
+    def update(self, maxn=10):
+        i = 0
+        r = self.read_response()
+        while r != {} and i < maxn:
+            self.update_state(r)
+            self.process_callbacks(r)
+            r = self.read_response()
+            i += 1
+        return i
+
+    def update_state(self, response):
+        {
+            'report_digital_in_status': self.parse_digital_in,
+            'report_analog_in_status': self.parse_analog_in,
+            'incap_status': self.parse_pulse_in,
+            #'report_periodic_digital_in_status':
+            'uart_data': self.parse_uart_data,
+        }.get(response['name'], lambda r: None)(response)
+        pass
+
+    def parse_digital_in(self, response):
+        self.pins[response['pin']].value = response['value']
+
+    def parse_analog_in(self, response):
+        for p in response['pins']:
+            self.pins[p].value = response['value']
+
+    def parse_pulse_in(self, response):
+        # parse this one
+        si = response['incap_num']
+        sm = self.modules.pulse_double.find_submodules(si)
+        m = self.modules.pulse_double
+        if sm is None:
+            sm = self.modules.pulse_single.find_submodules(si)
+            m = self.modules.pulse_single
+        sm.value = response['length']
+        # find pins that are assigned to this submodule
+        pins = m.get_pins_for_submodule(si)
+        for p in pins:
+            self.pins[p].value = sm.value
+
+    def parse_uart_data(self, response):
+        response['uart_num']
+        response['data']
+        # TODO
+        pass
+
     def reset_state(self):
-        self.pins = dict([(i, None) for i in xrange(len(self.pins))])
+        for pi in self.pins:
+            self.pins[pi].free()
+        #self.pins = dict([(i, None) for i in xrange(len(self.pins))])
         for sm in ('analog', 'pwm', 'uart', 'spi', 'pulse_double',
                    'pulse_single', 'twi', 'icsp'):
             getattr(self.modules, sm).reset()
@@ -42,9 +106,9 @@ class Board(object):
         self.write_command('soft_reset')
 
     def check_pin(self, pin, function, throw=True):
-        if self.pins[pin] is None:
+        if self.pins[pin].state is None:
             return 1
-        if self.pins[pin] == function:
+        if self.pins[pin].state == function:
             return 2
         if throw:
             raise IOError("Attempt to use configured pin %i [%s] as %s" %
@@ -60,10 +124,10 @@ class Board(object):
         # TODO special cleanup for modules
         self.write_command('set_pin_digital_in', pin, 'floating')
         self.write_command('set_change_notify', pin, False)
-        self.pins[pin] = None
+        self.pins[pin].free()
 
     def assign_pin(self, pin, function):
-        self.pins[pin] = function
+        self.pins[pin].state = function
 
     def digital_in(self, pin, pull='up', notify=True, callback=None):
         """
@@ -73,7 +137,11 @@ class Board(object):
         self.write_command('set_pin_digital_in', pin, pull)
         self.write_command('set_change_notify', pin, notify)
         self.assign_pin(pin, 'digital_in')
-        # TODO register callback
+        # TODO register callback for state
+        if callback is not None:
+            return self.add_callback(
+                'report_digital_in_status', callback,
+                lambda e: e['pin'] == pin)
 
     def digital_out(self, pin, level, open_drain=False):
         status = self.check_pin(pin, 'digital_out')
@@ -89,7 +157,11 @@ class Board(object):
         self.write_command('set_analog_in_sampling', pin, enable)
         self.assign_pin(pin, 'analog_in')
         self.modules.analog.assign_pin(pin)
-        # TODO register callback
+        # TODO register callback for state
+        if callback is not None:
+            return self.add_callback(
+                'report_analog_in_status', callback,
+                lambda e: pin in e)
 
     def pwm(self, pin, duty=None, freq=None, sindex=None, open_drain=False):
         """
@@ -131,7 +203,8 @@ class Board(object):
         self.write_command('set_pwm_duty_cycle', f, sindex, pw)
 
     def pulse_in(self, pin, clock=None, mode=None,
-                 pull=None, double=False, sindex=None):
+                 pull=None, double=False, sindex=None,
+                 callback=None):
         if double:
             hwm = self.modules.pulse_double
         else:
@@ -172,6 +245,12 @@ class Board(object):
         clock = sm.clock if clock is None else clock
         mode = sm.mode if mode is None else mode
         self.write_command('incap_config', sindex, clock, mode, double)
+
+        # TODO register callback for state
+        if callback is not None:
+            return self.add_callback(
+                'incap_status', callback,
+                lambda e: e['incap_num'] == sindex)
 
     def uart(self, **kwargs):
         """

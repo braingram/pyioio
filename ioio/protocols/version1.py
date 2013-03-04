@@ -88,10 +88,12 @@ class Version1Responses(object):
     def report_analog_in_status(self, io):
         if not hasattr(self, 'analog_pins'):
             raise ValueError('missing analog_pins')
+        pins = {}
         r = {'name': 'report_analog_in_status'}
         for p in self.analog_pins:
             header, high = io.read(2)
-            r[p] = ((ord(header) & 0x03) | (ord(high) << 2))
+            pins[p] = ((ord(header) & 0x03) | (ord(high) << 2))
+        r['pins'] = pins
         return r
 
     def report_analog_in_format(self, io):

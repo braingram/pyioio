@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from callbacks import Callback, Callbacker
+
 
 def shadow(a, b, overwrite=False, skip_private=True):
     for attr in dir(a):
@@ -11,4 +13,4 @@ def shadow(a, b, overwrite=False, skip_private=True):
         setattr(b, attr, getattr(a, attr))
 
 
-__all__ = ['shadow']
+__all__ = ['shadow', 'Callback', 'Callbacker']

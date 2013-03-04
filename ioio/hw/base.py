@@ -78,6 +78,9 @@ class HWWithSubmodules(HWModule):
     def get_submodule_for_pin(self, pin):
         return self.pins[pin]
 
+    def get_pins_for_submodule(self, sm):
+        return [p for p in self.pins if self.pins[p] == sm]
+
     def assign_pin(self, pin, index):
         if isinstance(index, self._subclass):
             index = self.find_submodule(self, index)
