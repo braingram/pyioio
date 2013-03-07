@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="us">
+<head>
+	<meta charset="utf-8">
+	<title>IOIO</title>
+    <script src="{{url_for('ajaxify.static', filename='js/jquery.js')}}"></script>
+    <script src="{{url_for('ajaxify.static', filename='js/jquery.json.js')}}"></script>
+    <script src="{{url_for('ajaxify.static', filename='js/ajaxify.js')}}"></script>
+    <script type="text/javascript">
+        $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+    <script type="text/javascript">
+        $(function() {
+            $(document).bind("keypress", function(e) {
+                if (e.keyCode == 13) {
+                    toggle_led();
+                    return false;
+                } else {
+                    return true;
+                };
+                });
+        });
+        var led_state = 1;
+        function toggle_led() {
+            led_state = led_state ? 0 : 1;
+            Ajaxify.send({
+                url: '/ajaxify',
+                func: 'digital_out',
+                args: "[0, "+ led_state + "]",
+                callback: function() {},
+            });
+        };
+    </script>
+</head>
+<body>
+    <button onclick="toggle_led()">Toggle LED</button>
+</body>
+</html>
