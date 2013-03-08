@@ -65,6 +65,14 @@ class HWWithSubmodules(HWModule):
         raise ValueError("No unused submodules: %s, %s" %
                          (self.pins, self.subs))
 
+    def valid_submodule(self, submodule):
+        if not isinstance(submodule, self._subclass):
+            return submodule in self.subs
+        for k in self.subs:
+            if self.subs[k] == submodule:
+                return True
+        return False
+
     def find_submodule(self, submodule):
         """
         If submodule is a key, return value from self.subs

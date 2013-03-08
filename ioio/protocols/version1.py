@@ -231,6 +231,12 @@ class Version1Commands(object):
         'tx': 1,
     }
 
+    parities = {
+        'none': 0,
+        'even': 1,
+        'odd': 2,
+    }
+
     def write(self, interface, command, *args, **kwargs):
         if not hasattr(self, command):
             raise ValueError("Unknown command: %s" % command)
@@ -305,9 +311,14 @@ class Version1Commands(object):
 
     def uart_config(self, uart_num, baud=9600, parity=0, two_stop_bits=0,
                     speed4x=0):
+        if isinstance(parity, (str, unicode)):
+            if parity not in self.parities:
+                raise ValueError("Unknown parity: %s not in %s" %
+                                 (parity, self.parities))
+            parity = self.parities[parity]
         return '\x0D' + \
-            chr((parity << 6) | ((two_stop_bits & 0x01) << 5) |
-                ((speed4x & 0x01) << 2) | (uart_num << 6)) + \
+            chr((uart_num << 6) | ((speed4x & 0x01) << 7) |
+                ((two_stop_bits & 0x01) << 2) | parity) + \
             struct.pack('<h', baud)
 
     def uart_data(self, uart_num, data, size=None):
@@ -315,7 +326,8 @@ class Version1Commands(object):
         assert isinstance(data, str)
         size = len(data) if size is None else size
         assert len(data) == size
-        return '\x0E' + chr((size << 2) | (uart_num & 0x03)) + data
+        # TODO should this be size - 1?
+        return '\x0E' + chr((size - 1) | (uart_num << 6)) + data
 
     def set_pin_uart(self, pin, uart_num, direction, enable=True):
         if isinstance(direction, (str, unicode)):
@@ -323,9 +335,8 @@ class Version1Commands(object):
                 raise ValueError("Unknown direction: %s not in %s" %
                                  (direction, self.uart_directions))
             direction = self.uart_directions[direction]
-        return '\x0F' + chr((pin << 2)) + \
-            chr((uart_num << 6) |
-                ((direction & 0x01) << 1) | (enable & 0x01))
+        return '\x0F' + chr(pin) + \
+            chr(uart_num | ((enable & 0x01) << 7) | ((direction & 0x01) << 2))
 
     def spi_configure_master(self):
         """

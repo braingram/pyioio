@@ -60,7 +60,7 @@ class Board(utils.Callbacker):
         {
             'report_digital_in_status': self.parse_digital_in,
             'report_analog_in_status': self.parse_analog_in,
-            'incap_status': self.parse_pulse_in,
+            'incap_report': self.parse_pulse_in,
             #'report_periodic_digital_in_status':
             'uart_data': self.parse_uart_data,
         }.get(response['name'], lambda r: None)(response)
@@ -76,11 +76,14 @@ class Board(utils.Callbacker):
     def parse_pulse_in(self, response):
         # parse this one
         si = response['incap_num']
-        sm = self.modules.pulse_double.find_submodules(si)
-        m = self.modules.pulse_double
-        if sm is None:
-            sm = self.modules.pulse_single.find_submodules(si)
+        if self.modules.pulse_double.valid_submodule(si):
+            sm = self.modules.pulse_double.find_submodule(si)
+            m = self.modules.pulse_double
+        elif self.modules.pulse_single.valid_submodule(si):
+            sm = self.modules.pulse_single.find_submodule(si)
             m = self.modules.pulse_single
+        else:
+            raise ValueError("Failed to find pulse in submodule %s" % si)
         sm.value = response['length']
         # find pins that are assigned to this submodule
         pins = m.get_pins_for_submodule(si)
@@ -104,6 +107,10 @@ class Board(utils.Callbacker):
     def soft_reset(self):
         self.reset_state()
         self.write_command('soft_reset')
+
+    def hard_reset(self):
+        self.reset_state()
+        self.write_command('hard_reset')
 
     def check_pin(self, pin, function, throw=True):
         if self.pins[pin].state is None:
