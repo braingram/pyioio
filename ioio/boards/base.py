@@ -195,7 +195,7 @@ class Board(utils.Callbacker):
 
         if (freq is not None) and (submodule.frequency != freq):
             submodule.frequency = freq
-            self.write_command('set_pwm_period', submodule.scale,
+            self.write_command('set_pwm_period', str(submodule.scale),
                                sindex, submodule.period)
         if duty is None:
             return

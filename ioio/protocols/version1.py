@@ -167,7 +167,7 @@ class Version1Responses(object):
 
     def icsp_report_rx_status(self, io):
         return {'name': 'icsp_report_rx_status',
-                'bytes_to_add': struct.unpack('h', io.read(2))[0]}
+                'bytes_to_add': struct.unpack('<h', io.read(2))[0]}
 
     def icsp_result(self, io):
         return {'name': 'icsp_result',
@@ -277,12 +277,12 @@ class Version1Commands(object):
 
     def set_pin_pwm(self, pin, pwm_num, enable=True):
         assert isinstance(pin, int)
-        return '\x08' + chr((pin << 2)) + \
-            chr((pwm_num << 4) | (0x01 & bool(enable)))
+        return '\x08' + chr((pin & 0x3F)) + \
+            chr((pwm_num & 0x0F) | ((0x01 & bool(enable)) << 7))
 
     def set_pwm_duty_cycle(self, fraction, pwm_num, duty_cycle):
-        return '\x09' + chr((fraction << 6) | ((pwm_num & 0x0f) << 2)) + \
-            struct.pack('h', duty_cycle)
+        return '\x09' + chr(fraction | (pwm_num << 2)) + \
+            struct.pack('<h', duty_cycle)
 
     def set_pwm_period(self, scale, pwm_num, period):
         if isinstance(scale, (str, unicode)):
@@ -290,10 +290,10 @@ class Version1Commands(object):
                 raise ValueError("Unknown scale: %s not in %s" %
                                  (scale, self.scale_codes))
             scale = self.scale_codes[scale]
-        sl = ((scale & 0x01) << 7)
-        sh = (scale & 0x02)
-        return '\x0A' + chr(sl | ((pwm_num & 0x0f) << 3) | sh) + \
-            struct.pack('h', period)
+        sl = (scale & 0x01)
+        sh = ((scale & 0x02) << 6)
+        return '\x0A' + chr(sl | (pwm_num << 1) | sh) + \
+            struct.pack('<h', int(period))
 
     def set_pin_analog_in(self, pin):
         assert isinstance(pin, int)
@@ -308,7 +308,7 @@ class Version1Commands(object):
         return '\x0D' + \
             chr((parity << 6) | ((two_stop_bits & 0x01) << 5) |
                 ((speed4x & 0x01) << 2) | (uart_num << 6)) + \
-            struct.pack('h', baud)
+            struct.pack('<h', baud)
 
     def uart_data(self, uart_num, data, size=None):
         assert isinstance(uart_num, int)
